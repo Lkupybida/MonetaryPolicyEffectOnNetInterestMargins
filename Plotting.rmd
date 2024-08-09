@@ -1,0 +1,103 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+The [R plugin](https://www.jetbrains.com/help/pycharm/r-plugin-support.html) for IntelliJ-based IDEs provides handy capabilities to work with the [R Markdown](https://www.jetbrains.com/help/pycharm/r-markdown.html) files. To [add](https://www.jetbrains.com/help/pycharm/r-markdown.html#add-code-chunk) a new R chunk,
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+```
+
+position the caret at any line or the code chunk, then click "+".
+
+The code chunk appears:
+
+```{r}
+# Define the function
+plot_median_quartiles <- function(file_path) {
+  # Read the CSV file
+  df <- read.csv(file_path, stringsAsFactors = FALSE)
+  
+  # Convert Date column to Date type
+  df$Date <- as.Date(df$Date)
+  
+  # Ensure all columns are numeric or NA, excluding the Date column
+  df_clean <- df %>%
+    mutate(across(-Date, ~ as.numeric(as.character(.)), .names = "numeric_{col}"))
+  
+  # Drop non-numeric columns and keep only the Date and numeric columns
+  df_numeric <- df_clean %>%
+    select(Date, starts_with("numeric_")) %>%
+    rename_with(~ sub("numeric_", "", .))
+  
+  # Convert to long format
+  df_long <- df_numeric %>%
+    pivot_longer(cols = -Date, names_to = "Bank", values_to = "Value")
+  
+  # Compute median and quartiles by date
+  summary_stats <- df_long %>%
+    group_by(Date) %>%
+    summarise(
+      Median = median(Value, na.rm = TRUE),
+      Q1 = quantile(Value, 0.25, na.rm = TRUE),
+      Q3 = quantile(Value, 0.75, na.rm = TRUE),
+      .groups = 'drop'
+    )
+  
+  # Plot using ggplot2
+  ggplot(summary_stats, aes(x = Date)) +
+    geom_line(aes(y = Median, color = "Median")) +
+    geom_ribbon(aes(ymin = Q1, ymax = Q3), alpha = 0.2, fill = "grey20") +
+    labs(title = "Median and Quartiles of Values Over Time",
+         x = "Date",
+         y = "Value") +
+    theme_minimal() +
+    scale_color_manual(name = "Statistic", values = c("Median" = "blue")) +
+    theme(legend.position = "top")
+}
+
+plot_column <- function(filename, chosen_column) {
+  # Read the CSV file
+  data <- read.csv(filename, stringsAsFactors = FALSE)
+  
+  # Convert the Date column to Date type
+  data$Date <- as.Date(data$Date)
+  
+  # Check if the chosen column exists
+  if (!(chosen_column %in% colnames(data))) {
+    stop("Chosen column does not exist in the CSV file.")
+  }
+  
+  # Plot the chosen column
+  ggplot(data, aes(x = Date, y = get(chosen_column))) +
+    geom_line() +
+    labs(title = paste("Time Series Plot of", chosen_column),
+         x = "Date",
+         y = chosen_column) +
+    theme_minimal()
+}
+```
+
+Type any R code in the chunk, for example:
+
+```{r}
+plot_median_quartiles("data/relative/admin_expenses_to_total_assets.csv")
+```
+
+Now, click the **Run** button on the chunk toolbar to [execute](https://www.jetbrains.com/help/pycharm/r-markdown.html#run-r-code) the chunk code. The result should be placed under the chunk. Click the **Knit and Open Document** to build and preview an output.
+
+```{r}
+plot_median_quartiles("data/extracted/complete/admin_expenses.csv")
+```
+
+```{r}
+plot_median_quartiles("data/extracted/complete/total_assets.csv")
+```
+
+```{r}
+plot_column("data/extracted/complete/total_assets.csv", "ПРИВАТБАНК")
+plot_column("data/extracted/complete/admin_expenses.csv", "ПРИВАТБАНК")
+```
