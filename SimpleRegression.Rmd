@@ -1,0 +1,265 @@
+---
+title: "Simple regressions NII on IR"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+library(readr)
+library(dplyr)
+library(stargazer)
+library(forecast)
+library(lubridate)
+library(stats)
+```
+
+## Reading data
+
+```{r}
+data <- read_csv("data/for_regressing/interbank_nii.csv")
+
+data_clean <- na.omit(data)
+```
+
+# Modeling
+
+## First simple model
+
+```{r}
+model <- lm(NII ~ IR, data = data_clean)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## First lagged model
+
+```{r}
+data_clean <- data_clean %>%
+  mutate(IR_lag1 = lag(IR, 1),
+         IR_lag2 = lag(IR, 2),
+         IR_lag3 = lag(IR, 3))
+
+model <- lm(NII ~ IR + IR_lag1 + IR_lag2 + IR_lag3, data = data_clean)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+This model is actually worse than the original one indicating that I need to somehow determine which exact lags to use.
+
+# Correlation functions
+
+From what I know usually people use these things to determine which lags to use, but I don't find them very useful. Still I decided to plot them anyways.
+
+## ACF
+
+```{r}
+acf(data$IR, main="ACF of IR")
+```
+
+## PCF
+
+```{r}
+pacf(data$IR, main="PACF of IR")
+```
+
+# Best possible model
+
+I dislike ACF and PCF and find them not very informative so instead I decided to iterate over all possible combinations of lags(up to 12) to find the best one.
+
+## Best by AIC
+
+```{r}
+data$Date <- ymd(data$Date)
+
+basic_model <- lm(NII ~ IR, data = data)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(basic_model)))
+
+create_lags <- function(data, var, max_lag) {
+  for (i in 1:max_lag) {
+    data[paste0(var, "_lag", i)] <- lag(data[[var]], i)
+  }
+  return(data)
+}
+
+data_with_lags <- create_lags(data, "IR", 24)
+
+test_lag_combinations <- function(data, max_lag) {
+  best_model <- NULL
+  best_aic <- Inf
+
+  for (i in 1:max_lag) {
+    for (combination in combn(1:max_lag, i, simplify = FALSE)) {
+      formula <- as.formula(paste("NII ~", paste(paste0("IR_lag", combination), collapse = " + ")))
+      model <- lm(formula, data = data)
+      current_aic <- AIC(model)
+
+      if (current_aic < best_aic) {
+        best_model <- model
+        best_aic <- current_aic
+      }
+    }
+  }
+
+  return(best_model)
+}
+
+best_model <- test_lag_combinations(data_with_lags, 24)
+
+cat('\n\n')
+stargazer(best_model, title = "Best model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_model)))
+cat('\n')
+cat(paste("Best model formula:", deparse(formula(best_model))))
+```
+
+So the best model is the one with lag 1 and 3. Lag 1 makes sense as it is expected to have a big effect due to the delayed effect that such policy changes can have. Why Lag 3 is so good I do not understand.
+
+```{r}
+model <- lm(NII ~ IR + IR_lag1 + IR_lag3, data = data_with_lags)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+It's interesting that adding a non lagged IR actually results in a worse model if we compare AIC scores. This kind of makes sense as the effect of changes to IR is always delayed. But also if we compare the $R^2$ of different models then this model is better.
+
+## Best by $R^2$
+
+Just for fun I also checked what is the best model according to $R^2$. I know it's not designed for comparing models but still I thought we might see something interesting.
+
+```{r}
+data$Date <- ymd(data$Date)
+
+# Basic regression
+basic_model <- lm(NII ~ IR, data = data)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+
+# Function to create lagged variables
+create_lags <- function(data, var, max_lag) {
+  for (i in 1:max_lag) {
+    data[paste0(var, "_lag", i)] <- lag(data[[var]], i)
+  }
+  return(data)
+}
+
+# Create lagged variables for IR
+data_with_lags <- create_lags(data, "IR", 24)
+
+# Function to test all possible lag combinations
+test_lag_combinations <- function(data, max_lag) {
+  best_model <- NULL
+  best_r2 <- 0
+  
+  for (i in 1:max_lag) {
+    for (combination in combn(1:max_lag, i, simplify = FALSE)) {
+      formula <- as.formula(paste("NII ~", paste(paste0("IR_lag", combination), collapse = " + ")))
+      model <- lm(formula, data = data)
+      current_r2 <- summary(model)$r.squared
+      
+      if (current_r2 > best_r2) {
+        best_model <- model
+        best_r2 <- current_r2
+      }
+    }
+  }
+  
+  return(best_model)
+}
+
+# Find the best model
+best_model <- test_lag_combinations(data_with_lags, 12)
+
+cat('\n\n')
+stargazer(best_model, title = "Best model", type = "text", align = TRUE, single.row = TRUE)
+cat('\n')
+cat(paste("Best R-squared:", summary(best_model)$r.squared))
+```
+
+And we did see something interesting. Expectedly the best model is the one that has the most explanatory variables. But not quite. Even here the non-lagged IR is absent indicating that it is really not at all useful, meaning that there is indeed a very significant delay between policy changes taking effect and then affecting the actual results.
+
+
+
+# HI
+
+```{r}
+data <- read_csv("data/relative/Interbank.csv")
+
+data_adjusted <- data %>%
+  arrange(Date) %>%
+  mutate(IR_diff = IR - lag(IR, default = NA))
+
+data_with_lags <- create_lags(data_adjusted, "IR", 24)
+df <- data_with_lags[, c('Date', 'IR_lag7')]
+# Save the modified dataframe to a CSV file
+write.csv(df, "data/relative/Interbank_lag/Interbank_lag7.csv", row.names = FALSE)
+```
+

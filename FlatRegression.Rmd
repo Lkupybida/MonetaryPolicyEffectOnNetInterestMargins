@@ -1,0 +1,199 @@
+---
+title: "Simple regressions NII on IR"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+library(readr)
+library(dplyr)
+library(stargazer)
+library(forecast)
+library(lubridate)
+library(stats)
+library(lfe)
+```
+
+## Reading data
+
+```{r}
+data <- read_csv("data/for_regressing/flattened.csv")
+full_data <- data
+```
+
+## Adding lags
+
+```{r}
+data_adjusted <- data %>%
+  arrange(Date) %>%
+  mutate(IR_diff = IR - lag(IR, default = NA))
+
+data_adjusted
+```
+
+# Modeling
+
+## OLS
+
+```{r}
+model1 <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA, data = data)
+
+stargazer(model1, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Fixed bank effect
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+
+model2 <- felm(NII ~ AE + LEV + CASH + NCI + TA + IR | Bank | 0 | 0, data = data)
+
+stargazer(model1, model2, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Fixed bank & time effect
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+data$Date <- as.factor(data$Date)
+
+model3 <- felm(NII ~ AE + LEV + CASH + NCI + TA + IR | Bank + Date | 0 | 0, data = data)
+
+stargazer(model2, model3, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+
+getfe(model)
+```
+
+# Splitting into periods
+
+```{r}
+data <- read_csv("data/for_regressing/flattened.csv")
+df_pre2014 <- data[data$Date < "2014-01-01", ]
+df_after2014 <- data[data$Date >= "2014-01-01", ]
+df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-03-01", ]
+df_after2022 <- data[data$Date >= "2022-03-01", ]
+```
+
+## Pre-2014
+
+```{r}
+df_pre2014$Date <- as.Date(df_pre2014$Date)
+df_pre2014$Bank <- as.factor(df_pre2014$Bank)
+
+model4 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA | Bank | 0 | Bank, data = df_pre2014)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+stargazer(model2, model4, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Post-2014
+
+```{r}
+df_after2014$Date <- as.Date(df_after2014$Date)
+df_after2014$Bank <- as.factor(df_after2014$Bank)
+
+model5 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA |  Bank | 0 | Bank, data = df_after2014)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+stargazer(model4, model5, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Post-2014, Pre-2022
+
+```{r}
+df_after2014pre2022$Date <- as.Date(df_after2014pre2022$Date)
+df_after2014pre2022$Bank <- as.factor(df_after2014pre2022$Bank)
+
+model6 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA | Bank | 0 | Bank, data = df_after2014pre2022)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+stargazer(model4, model5, model6, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Post-2022
+
+```{r}
+df_after2022$Date <- as.Date(df_after2022$Date)
+df_after2022$Bank <- as.factor(df_after2022$Bank)
+
+model7 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA |  Bank | 0 | Bank, data = df_after2022)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+stargazer(model4, model5, model6, model7, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model))) 
+
+```

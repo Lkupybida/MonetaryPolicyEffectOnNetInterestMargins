@@ -1,0 +1,128 @@
+---
+title: "Simple regressions NII on IR"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+library(readr)
+library(dplyr)
+library(stargazer)
+library(forecast)
+library(lubridate)
+library(stats)
+```
+
+## Reading data
+
+```{r}
+median_data <- read_csv("data/for_regressing/median_dataset.csv")
+
+median_data <- na.omit(median_data)
+
+mean_data <- read_csv("data/for_regressing/averaged_dataset.csv")
+
+mean_data <- na.omit(mean_data)
+```
+
+# Modeling
+
+## Median model
+
+```{r}
+model1 <- lm(NII ~ IR + AE + NCI + LEV + TA + CASH, data = median_data)
+
+stargazer(model1, title = 'Model on median data', type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+### Best median model
+
+```{r}
+model <- lm(NII ~ IR + AE + NCI, data = median_data)
+
+stargazer(model, title = 'Model on median data', type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+## Mean model
+
+```{r}
+model <- lm(NII ~ IR + AE + NCI + LEV + TA + CASH, data = mean_data)
+
+stargazer(model,model1, title = 'Model on mean data', type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+### Best mean model
+
+```{r}
+model <- lm(NII ~ IR + AE + LEV + TA + CASH, data = mean_data)
+
+stargazer(model, title = 'Model on mean data', type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```

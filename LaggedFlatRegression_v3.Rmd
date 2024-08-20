@@ -1,0 +1,200 @@
+---
+title: "Fixed effect regression on different datasets"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stargazer))
+suppressPackageStartupMessages(library(forecast))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(stats))
+suppressPackageStartupMessages(library(lfe))
+source("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/functions.R")
+```
+
+# Reading data
+
+```{r}
+data_with_OVDP <- read_csv("data/for_regressing/flattened.csv", show_col_types = FALSE)
+data <- data_with_OVDP %>% select(-OVDP)
+data <- na.omit(data)
+```
+
+# Modeling
+
+### General fixed bank effect
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+
+model2 <- felm(NII ~ AE + LEV + CASH + NCI + TA + SEC + IR | Bank | 0 | 0, data = data)
+
+generate_stargazer_with_titles(list(model2), c('Fixed effect model'))
+```
+
+```{r}
+best_fe <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | 0, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model2), c('Best fixed effect model with lags', 'Fixed effect model'))
+```
+
+# Splitting into periods
+
+```{r}
+data_with_OVDP <- read_csv("data/for_regressing/flattened.csv", show_col_types = FALSE)
+data <- data_with_OVDP %>% select(-OVDP)
+data <- na.omit(data)
+df_pre2014 <- data[data$Date < "2014-01-01", ]
+df_after2014 <- data[data$Date >= "2014-01-01", ]
+df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-03-01", ]
+df_after2022 <- data[data$Date >= "2022-03-01", ]
+```
+
+## Pre-2014
+
+```{r}
+df_pre2014$Date <- as.Date(df_pre2014$Date)
+df_pre2014$Bank <- as.factor(df_pre2014$Bank)
+
+model4 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR | Bank | 0 | Bank, data = df_pre2014)
+
+model4.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | Bank, data = df_pre2014)
+
+generate_stargazer_with_titles(list(best_fe, model4, model4.5), c('Best FE model', 'Pre2014', 'Pre2014 lagged'))
+```
+
+## Post-2014
+
+```{r}
+df_after2014$Date <- as.Date(df_after2014$Date)
+df_after2014$Bank <- as.factor(df_after2014$Bank)
+
+model5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014)
+
+
+model5.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = df_after2014)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+generate_stargazer_with_titles(list(best_fe, model5, model5.5), c('Best FE model', 'Post2014', 'Post2014 lagged'))
+```
+
+## Post-2014, Pre-2022
+
+```{r}
+df_after2014pre2022$Date <- as.Date(df_after2014pre2022$Date)
+df_after2014pre2022$Bank <- as.factor(df_after2014pre2022$Bank)
+
+model6 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR | Bank | 0 | Bank, data = df_after2014pre2022)
+
+model6.5 <- felm(NII ~ AE + LEV + CASH + NCI + TA + SEC + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | Bank, data = df_after2014pre2022)
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model6, model6.5), c('Best FE model', 'Post2014-Pre2022', 'Post2014-Pre2022 lagged'))
+```
+
+## Post-2022
+
+```{r}
+df_after2022$Date <- as.Date(df_after2022$Date)
+df_after2022$Bank <- as.factor(df_after2022$Bank)
+
+model7 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2022)
+
+model7.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = df_after2022)
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model7, model7.5), c('Best FE model', 'Post2022', 'Post2022 lagged'))
+```
+
+# Bank groups
+
+## Functioning today or not
+
+```{r}
+functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+not_functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = functioning)
+not_functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = not_functioning)
+
+generate_stargazer_with_titles(list(functioning_model, not_functioning_model), c('Functioning', 'Not functioning'))
+```
+
+## Top 25 (as of today)
+
+```{r}
+top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+top25_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = top25)
+rest_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = rest)
+
+generate_stargazer_with_titles(list(top25_model, rest_model), c('Top 25', 'Rest'))
+```

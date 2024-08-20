@@ -1,7 +1,73 @@
 ---
-title: "R Notebook"
-output: html_document
+title: "Simple regressions NII on IR"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
 ---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: #d2d2d2;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: black;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+
+------------------------------------------------------------------------
 
 The [R plugin](https://www.jetbrains.com/help/pycharm/r-plugin-support.html) for IntelliJ-based IDEs provides handy capabilities to work with the [R Markdown](https://www.jetbrains.com/help/pycharm/r-markdown.html) files. To [add](https://www.jetbrains.com/help/pycharm/r-markdown.html#add-code-chunk) a new R chunk,
 
@@ -16,7 +82,6 @@ position the caret at any line or the code chunk, then click "+".
 The code chunk appears:
 
 ```{r}
-# Define the function
 plot_median_quartiles <- function(file_path) {
   # Read the CSV file
   df <- read.csv(file_path, stringsAsFactors = FALSE)
@@ -51,6 +116,8 @@ plot_median_quartiles <- function(file_path) {
   ggplot(summary_stats, aes(x = Date)) +
     geom_line(aes(y = Median, color = "Median")) +
     geom_ribbon(aes(ymin = Q1, ymax = Q3), alpha = 0.2, fill = "grey20") +
+    geom_vline(xintercept = as.Date("2018-01-01"), color = "red", linetype = "dashed") +
+    geom_vline(xintercept = as.Date("2018-04-01"), color = "pink", linetype = "dashed") +
     labs(title = "Median and Quartiles of Values Over Time",
          x = "Date",
          y = "Value") +
@@ -58,7 +125,9 @@ plot_median_quartiles <- function(file_path) {
     scale_color_manual(name = "Statistic", values = c("Median" = "blue")) +
     theme(legend.position = "top")
 }
+```
 
+```{r}
 plot_column <- function(filename, chosen_column) {
   # Read the CSV file
   data <- read.csv(filename, stringsAsFactors = FALSE)
@@ -68,12 +137,14 @@ plot_column <- function(filename, chosen_column) {
   
   # Check if the chosen column exists
   if (!(chosen_column %in% colnames(data))) {
-    stop("Chosen column does not exist in the CSV file.")
+    stop("Chosen column ", chosen_column, " does not exist in the CSV file.")
   }
   
   # Plot the chosen column
   ggplot(data, aes(x = Date, y = get(chosen_column))) +
     geom_line() +
+    geom_vline(xintercept = as.Date("2018-01-01"), color = "red", linetype = "dashed") +
+    geom_vline(xintercept = as.Date("2018-04-01"), color = "pink", linetype = "dashed") +
     labs(title = paste("Time Series Plot of", chosen_column),
          x = "Date",
          y = chosen_column) +
@@ -84,20 +155,71 @@ plot_column <- function(filename, chosen_column) {
 Type any R code in the chunk, for example:
 
 ```{r}
+bank = "ПРИВАТБАНК"
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly_diff/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2018_to_now_monthly_differenced/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', bank)
+```
+
+```{r}
+bank = "ОЩАДБАНК"
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly_diff/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2018_to_now_monthly_differenced/admin_expenses.csv', bank)
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', bank)
+```
+
+```{r}
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "ПРИВАТБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "ОЩАДБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "УКРСИББАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "УКРЕКСІМБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "УКРСОЦБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "ПРОМІНВЕСТБАНК")
+# plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "НАДРА")
+# plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "ФОРУМ")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/admin_expenses.csv', "ПУМБ")
+```
+
+```{r}
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "ПРИВАТБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "ОЩАДБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "УКРСИББАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "УКРЕКСІМБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "УКРСОЦБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "ПРОМІНВЕСТБАНК")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "НАДРА")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "ФОРУМ")
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/net_commision_income.csv', "ПУМБ")
+```
+
+```{r}
+plot_median_quartiles('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/complete/total_assets.csv')
+```
+
+```{r}
 plot_median_quartiles("data/relative/admin_expenses_to_total_assets.csv")
 ```
 
 Now, click the **Run** button on the chunk toolbar to [execute](https://www.jetbrains.com/help/pycharm/r-markdown.html#run-r-code) the chunk code. The result should be placed under the chunk. Click the **Knit and Open Document** to build and preview an output.
 
 ```{r}
-plot_median_quartiles("data/extracted/complete/admin_expenses.csv")
+plot_median_quartiles("data/relative/ovdp_to_total_assets.csv")
 ```
 
 ```{r}
-plot_median_quartiles("data/extracted/complete/total_assets.csv")
+plot_median_quartiles("data/relative/net_commision_income_to_total_assets.csv")
 ```
 
 ```{r}
-plot_column("data/extracted/complete/total_assets.csv", "ПРИВАТБАНК")
-plot_column("data/extracted/complete/admin_expenses.csv", "ПРИВАТБАНК")
+plot_median_quartiles("data/relative/capital_to_total_assets.csv")
+```
+
+```{r}
+plot_median_quartiles("data/relative/net_interest_income_to_total_assets.csv")
+```
+
+```{r}
+plot_median_quartiles("data/relative/total_assets.csv")
 ```

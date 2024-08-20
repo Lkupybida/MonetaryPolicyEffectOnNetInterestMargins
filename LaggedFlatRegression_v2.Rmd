@@ -1,0 +1,303 @@
+---
+title: "Simple regressions NII on IR"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+library(readr)
+library(dplyr)
+library(stargazer)
+library(forecast)
+library(lubridate)
+library(stats)
+library(lfe)
+```
+
+## Reading data
+
+```{r}
+data_with_OVDP <- read_csv("data/for_regressing/flattened.csv")
+data <- data_with_OVDP %>% select(-OVDP)
+data <- na.omit(data)
+```
+
+```{r}
+test_lag_combinations <- function(data, max_lag, output=FALSE) {
+  best_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR, data = data)
+  best_aic <- AIC(best_model)
+  print(best_aic)
+
+  for (include_non_lagged in c(FALSE, TRUE)) {
+    for (i in 1:max_lag) {
+      for (combination in combn(1:max_lag, i, simplify = FALSE)) {
+        if (include_non_lagged) {
+          formula <- as.formula(paste("NII ~ AE + LEV + CASH + NCI + SEC + TA + IR +", paste(paste0("IR_lag", combination), collapse = " + ")))
+        } else {
+          formula <- as.formula(paste("NII ~ AE + LEV + CASH + NCI + SEC + TA + ", paste(paste0("IR_lag", combination), collapse = " + ")))
+        }
+        model <- felm(formula, data = data)
+        current_aic <- AIC(model)
+        if (output == TRUE) {
+          cat("Best model formula: \n")
+          cat(deparse(formula(model)))
+          cat("\nAIC: ", current_aic, "\n\n") }
+        if (current_aic < best_aic) {
+          best_model <- model
+          best_aic <- current_aic
+        }
+      }
+    }
+  }
+  cat("Best model formula: \n")
+  cat(deparse(formula(model)))
+  return(best_model)
+}
+```
+
+```{r}
+generate_stargazer_with_titles <- function(models, titles) {
+  library(stargazer)
+  
+  type = "text"
+  align = TRUE
+  single_row = TRUE
+  
+  if (length(models) != length(titles)) {
+    stop("The number of titles must match the number of models.")
+  }
+  
+  # Calculate AIC scores
+  aic_scores <- sapply(models, AIC)
+  
+  # Generate stargazer output
+  output <- capture.output(
+    stargazer(models, type = type, align = align, single.row = single_row)
+  )
+  
+  # Remove quotes and leading numbers
+  output <- gsub('^\\s*\\[\\d+\\]\\s*"|"$', '', output)
+  
+  # Find the position of the first separator line
+  separator_line <- which(grepl("^=+$", output))[1]
+  
+  # Extract the width of the separator line
+  total_width <- nchar(output[separator_line])
+  
+  # Calculate the width for each title
+  title_width <- floor(total_width / length(titles))
+  
+  # Create aligned titles
+  aligned_titles <- paste("", sapply(titles, function(t) sprintf(paste0("%-", title_width, "s"), t)), collapse = "")
+  
+  # Insert aligned titles at the top
+  output <- c(aligned_titles, output)
+  
+  # Create AIC score row
+  aic_row <- gsub("Adjusted R2", "AIC", output[grep("Adjusted R2", output)])
+  aic_values <- sprintf("%.2f", aic_scores)
+  aic_row <- gsub("\\d+\\.\\d+", "%s", aic_row)
+  aic_row <- do.call(sprintf, c(list(aic_row), as.list(aic_values)))
+  
+  # Find the position to insert AIC scores (after Adjusted R2 line)
+  adj_r2_line <- grep("Adjusted R2", output)
+  
+  # Insert AIC scores
+  output <- c(output[1:adj_r2_line], aic_row, output[(adj_r2_line+1):length(output)])
+  
+  # Print the modified output
+  cat(output, sep = "\n")
+}
+```
+
+# Modeling
+
+## IR Diff vs not Diff
+
+### OLS
+
+```{r}
+model1 <- lm(NII ~ AE + LEV + CASH + NCI + TA + SEC + IR, data = data)
+
+generate_stargazer_with_titles(list(model1), c('Simple OLS model'))
+```
+
+### Fixed bank effect
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+
+model2 <- felm(NII ~ AE + LEV + CASH + NCI + TA + SEC + IR | Bank | 0 | 0, data = data)
+
+generate_stargazer_with_titles(list(model2), c('Fixed effect model'))
+```
+
+```{r}
+best <- test_lag_combinations(data, 6)
+cat('\n\n')
+generate_stargazer_with_titles(list(model1, best), c('Simple OLS model', 'OLS model with best lags'))
+```
+
+```{r}
+best_fe <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | 0, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model2), c('Best fixed effect model with lags', 'Fixed effect model'))
+```
+
+# Splitting into periods
+
+```{r}
+data_with_OVDP <- read_csv("data/for_regressing/flattened.csv")
+data <- data_with_OVDP %>% select(-OVDP)
+data <- na.omit(data)
+df_pre2014 <- data[data$Date < "2014-01-01", ]
+df_after2014 <- data[data$Date >= "2014-01-01", ]
+df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-03-01", ]
+df_after2022 <- data[data$Date >= "2022-03-01", ]
+```
+
+## Pre-2014
+
+```{r}
+df_pre2014$Date <- as.Date(df_pre2014$Date)
+df_pre2014$Bank <- as.factor(df_pre2014$Bank)
+
+model4 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR | Bank | 0 | Bank, data = df_pre2014)
+
+model4.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | Bank, data = df_pre2014)
+
+generate_stargazer_with_titles(list(best_fe, model4, model4.5), c('Best FE model', 'Pre2014', 'Pre2014 lagged'))
+```
+
+## Post-2014
+
+```{r}
+df_after2014$Date <- as.Date(df_after2014$Date)
+df_after2014$Bank <- as.factor(df_after2014$Bank)
+
+model5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014)
+
+
+model5.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = df_after2014)
+
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+generate_stargazer_with_titles(list(best_fe, model5, model5.5), c('Best FE model', 'Post2014', 'Post2014 lagged'))
+```
+
+## Post-2014, Pre-2022
+
+```{r}
+df_after2014pre2022$Date <- as.Date(df_after2014pre2022$Date)
+df_after2014pre2022$Bank <- as.factor(df_after2014pre2022$Bank)
+
+model6 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR | Bank | 0 | Bank, data = df_after2014pre2022)
+
+model6.5 <- felm(NII ~ AE + LEV + CASH + NCI + TA + SEC + IR + IR_lag1 + IR_lag2 + IR_lag3 | Bank | 0 | Bank, data = df_after2014pre2022)
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model6, model6.5), c('Best FE model', 'Post2014-Pre2022', 'Post2014-Pre2022 lagged'))
+```
+
+## Post-2022
+
+```{r}
+df_after2022$Date <- as.Date(df_after2022$Date)
+df_after2022$Bank <- as.factor(df_after2022$Bank)
+
+model7 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2022)
+
+model7.5 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = df_after2022)
+# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
+
+generate_stargazer_with_titles(list(best_fe, model7, model7.5), c('Best FE model', 'Post2022', 'Post2022 lagged'))
+```
+
+# Bank groups
+
+## Functioning today or not
+
+```{r}
+functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+not_functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = functioning)
+not_functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = not_functioning)
+
+generate_stargazer_with_titles(list(functioning_model, not_functioning_model), c('Functioning', 'Not functioning'))
+```
+
+## Top 25 (as of today)
+
+```{r}
+top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+top25_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = top25)
+rest_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = rest)
+
+generate_stargazer_with_titles(list(top25_model, rest_model), c('Top 25', 'Rest'))
+```

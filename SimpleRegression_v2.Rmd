@@ -1,0 +1,297 @@
+---
+title: "Simple regressions NII on IR_diff"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+library(readr)
+library(dplyr)
+library(stargazer)
+library(forecast)
+library(lubridate)
+library(stats)
+```
+
+## Reading data
+
+```{r}
+data <- read_csv("data/for_regressing/interbank_nii.csv")
+
+data_clean <- na.omit(data)
+```
+
+Difference
+
+```{r}
+data_adjusted <- data_clean %>%
+  arrange(Date) %>%
+  mutate(IR_diff = IR - lag(IR, default = NA)) %>%
+  na.omit()
+```
+
+# Modeling
+
+## First simple model
+
+```{r}
+model <- lm(NII ~ IR_diff, data = data_adjusted)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(model)))
+```
+
+# Best possible model
+
+I decided to iterate over all possible combinations of lags(up to 12) to find the best one.
+
+## Best by AIC
+
+```{r}
+create_lags <- function(data, var, max_lag) {
+  for (i in 1:max_lag) {
+    data[paste0(var, "_lag", i)] <- lag(data[[var]], i)
+  }
+  return(data)
+}
+
+data_with_lags <- create_lags(data_adjusted, "IR_diff", 24)
+
+test_lag_combinations <- function(data, max_lag, output=FALSE) {
+  best_model <- lm(NII ~ IR_diff, data = data)
+  best_aic <- AIC(best_model)
+
+  for (include_non_lagged in c(FALSE, TRUE)) {
+    for (i in 1:max_lag) {
+      for (combination in combn(1:max_lag, i, simplify = FALSE)) {
+        if (include_non_lagged) {
+          formula <- as.formula(paste("NII ~ IR +", paste(paste0("IR_diff_lag", combination), collapse = " + ")))
+        } else {
+          formula <- as.formula(paste("NII ~", paste(paste0("IR_diff_lag", combination), collapse = " + ")))
+        }
+        model <- lm(formula, data = data)
+        current_aic <- AIC(model)
+        if (output == TRUE) {
+          cat("Best model formula: \n")
+          cat(deparse(formula(model)))
+          cat("\nAIC: ", current_aic, "\n\n") }
+        if (current_aic < best_aic) {
+          best_model <- model
+          best_aic <- current_aic
+        }
+      }
+    }
+  }
+
+  return(best_model)
+}
+data
+```
+
+### Basic for comparasion
+
+```{r}
+data_adjusted$Date <- ymd(data_adjusted$Date)
+
+basic_model <- lm(NII ~ IR_diff, data = data_adjusted)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(basic_model)))
+```
+
+### The best
+
+```{r}
+best_model <- test_lag_combinations(data_with_lags, 12)
+
+stargazer(best_model, title = "Best model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_model)))
+cat('\n')
+cat(paste("Best model formula:", deparse(formula(best_model))))
+```
+
+## Best without IR
+
+```{r}
+test_lag_combinations_withoutIR <- function(data, max_lag, output=FALSE) {
+  best_model <- NULL
+  best_aic <- Inf
+
+  for (i in 1:max_lag) {
+    for (combination in combn(1:max_lag, i, simplify = FALSE)) {
+      formula <- as.formula(paste("NII ~", paste(paste0("IR_diff_lag", combination), collapse = " + ")))
+      model <- lm(formula, data = data)
+      current_aic <- AIC(model)
+      if (output == TRUE) {
+        cat("Best model formula: \n")
+        cat(deparse(formula(model)))
+        cat("\nAIC: ", current_aic, "\n\n") }
+      if (current_aic < best_aic) {
+        best_model <- model
+        best_aic <- current_aic
+      }
+    }
+  }
+
+  return(best_model)
+}
+
+best_model <- test_lag_combinations_withoutIR(data_with_lags, 5)
+
+stargazer(best_model, title = "Best model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_model)))
+cat('\n')
+cat(paste("Best model formula:", deparse(formula(best_model))))
+```
+
+### Best with 2 lags
+
+```{r}
+basic_model <- lm(NII ~ IR_diff_lag1 + IR_diff_lag2, data = data_with_lags)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(basic_model)))
+```
+
+### Best with 3 lags
+
+```{r}
+basic_model <- lm(NII ~ IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3, data = data_with_lags)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(basic_model)))
+```
+
+### Best with 4 lags
+
+```{r}
+basic_model <- lm(NII ~ IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3 + IR_diff_lag4, data = data_with_lags)
+
+stargazer(basic_model, title = "Basic Model", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(basic_model)))
+```
+
+## Spliting into periods
+
+```{r}
+df_pre2014 <- data_with_lags[data_with_lags$Date < "2014-01-01", ]
+df_after2014 <- data_with_lags[data_with_lags$Date >= "2014-01-01", ]
+df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-03-01", ]
+df_after2022 <- data_with_lags[data_with_lags$Date >= "2022-03-01", ]
+```
+
+### Pre-2014
+
+```{r}
+best_pre2014 <- test_lag_combinations(df_pre2014, 6)
+stargazer(best_pre2014, title = "Best Model Before 2014", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_pre2014)))
+
+cat("\n\nGeneric model before 2014")
+generic_pre2014 <- lm(NII ~ IR_diff + IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3 + IR_diff_lag4, data = df_pre2014)
+stargazer(generic_pre2014, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(generic_pre2014)))
+```
+
+### Post-2014
+
+```{r}
+best_after2014 <- test_lag_combinations(df_after2014, 6)
+stargazer(best_after2014, title = "Best Model After 2014", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_after2014)))
+
+cat("\n\nGeneric model after 2014")
+generic_after2014 <- lm(NII ~ IR_diff + IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3 + IR_diff_lag4, data = df_after2014)
+stargazer(generic_after2014, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(generic_after2014)))
+```
+
+### Post-2014, Pre-2022
+
+```{r}
+best_after2014pre2022 <- test_lag_combinations(df_after2014pre2022, 6)
+stargazer(best_after2014pre2022, title = "Best Model After 2014, but Before 2022", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_after2014pre2022)))
+
+cat("\n\nGeneric model after 2014, but Before 2022")
+generic_after2014pre2022 <- lm(NII ~ IR_diff + IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3 + IR_diff_lag4, data = df_after2014pre2022)
+stargazer(generic_after2014pre2022, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(generic_after2014pre2022)))
+```
+
+### Post-2022
+
+```{r}
+best_after2022 <- test_lag_combinations(df_after2022, 6)
+stargazer(best_after2022, title = "Best Model After 2022", type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(best_after2022)))
+
+cat("\n\nGeneric model after 2022")
+generic_after2022 <- lm(NII ~ IR_diff + IR_diff_lag1 + IR_diff_lag2 + IR_diff_lag3 + IR_diff_lag4, data = df_after2022)
+stargazer(generic_after2022, type = "text", align = TRUE, single.row = TRUE)
+cat(paste("AIC: ", AIC(generic_after2022)))
+```

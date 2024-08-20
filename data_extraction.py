@@ -17,7 +17,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.patheffects import withStroke
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Union
 import colorsys
 import seaborn as sns
 from matplotlib.sankey import Sankey
@@ -28,6 +28,8 @@ from matplotlib.ticker import FuncFormatter
 import csv
 from glob import glob
 import re
+import sys
+from contextlib import contextmanager
 
 def find_all_excel_paths():
     excel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xlsx'), recursive=True)
@@ -159,6 +161,7 @@ def extract_unique_banks(directory_path):
 
     print(f"Unique bank names have been saved to {output_file}")
 
+from col_names import *
 
 def extract_bank_data(sheet_name, column, output_file):
     if sheet_name == 'Assets':
@@ -172,10 +175,11 @@ def extract_bank_data(sheet_name, column, output_file):
     else:
         print('Incorrect sheet name: ', sheet_name)
         return
-    sheet_names = [['Активи', 'Активи банків', ' Активи банків'],
+    sheet_names = [['Активи', 'Активи банків', ' Активи банків', 'Активи'],
                    ['Зобовязання', "Зобов'язання банків", "Зобов`язання"],
                    ['Власний капітал', 'Капітал банків', 'Капітал', 'Власний капітал банків', ' Капітал банків', 'Капітал '],
-                   ['Фінансові результати', 'Фінансові результати банків', 'Фінрез']]
+                   ['Фінансові результати', 'Фінансові результати банків', 'Фінрез'],
+                   ['Money']]
     sheet = sheet_names[sheet_name]
     data = {}
     files_path = 'data/original/Aggregation/files.csv'
@@ -184,28 +188,39 @@ def extract_bank_data(sheet_name, column, output_file):
     for file_num in range(0, len(files_df['dates'])):
         date = files_df['dates'][file_num]
         file_path = files_df['files'][file_num]
-
         df = None
         for sheet_name in sheet:
             try:
                 target_col, df = find_target_column_wrapper(file_path, sheet_name, column, date)
+                # print(df[target_col])
                 # print(f"Successfully read sheet '{sheet_name}' for date {date}")
                 break
             except Exception as e:
                 # print(f"Error reading sheet '{sheet_name}' in file for {date}: {str(e)}")
                 ok =2
 
-        if df is None:
-            print(f"Couldn't read any sheet for date {date}")
-            continue
-
-        if date in ['2018-01-01','2018-02-01','2018-03-01']:
-            # print(f"Shape of DataFrame for {date}: {df.shape}")
-            # print(f"Columns in DataFrame: {df.columns.tolist()}")
-            # print(f"Target column: {target_col}")
-            # print(f"First few rows of DataFrame:\n{df.head()}")
-            df = df.set_index(find_target_column(df, 'Банк'))
-            # df.to_csv('data/extracted/check.csv')
+        # if date in ['2018-01-01','2018-02-01','2018-03-01']:
+        #     if column in [cash, securities1, securities2]:
+        #         if column in [securities1, securities2]:
+        #             if date == '2018-01-01':
+        #                 df.to_csv('data/extracted/check.csv')
+        #                 ok =1
+        #         # print(f"Shape of DataFrame for {date}: {df.shape}")
+        #         # print(f"Columns in DataFrame: {df.columns.tolist()}")
+        #         # print(f"Target column: {target_col}")
+        #         # df = df.set_index('Банк')
+        #         # print(f"First few rows of DataFrame:\n{df.head()}")
+        #         # df.drop(column='Unnamed: 1')
+        #         # print(df.columns)
+        #         ok =1
+        #         # df.to_csv('data/extracted/check.csv')
+        #     else:
+        #         # print(f"Shape of DataFrame for {date}: {df.shape}")
+        #         # print(f"Columns in DataFrame: {df.columns.tolist()}")
+        #         # print(f"Target column: {target_col}")
+        #         # print(f"First few rows of DataFrame:\n{df.head()}")
+        #         df = df.set_index(find_target_column(df, 'Банк'))
+        #         # df.to_csv('data/extracted/check.csv')
 
         if date in ['2011-10-01']:
             if sheet_name != 'Власний капітал':
@@ -218,33 +233,65 @@ def extract_bank_data(sheet_name, column, output_file):
                 # print(f"Target column: {target_col}")
                 # print(f"First few rows of DataFrame:\n{df.head()}")
                 # df.to_csv('data/extracted/check.csv')
+        # print(date)
 
-        # Rename banks and extract data
-        date_data = {}
-        for bank_name, row in df.iterrows():
-            if isinstance(bank_name, str) and bank_name != 'Назва банку':  # Skip the header row
-                renamed_bank = rename_bank(bank_name)
-                if renamed_bank != "Error":
-                    try:
-                        value = row[target_col]
-                        if pd.notna(value):
-                            date_data[renamed_bank] = value
-                            # print(f"Added data for {renamed_bank}: {value}")
-                        # else:
-                            # print(f"Skipping NaN value for {renamed_bank}")
-                    except KeyError:
-                        ok = 1
-                        # print(f"Column {target_col} not found in file for {date}")
+
+        # if date in ['2018-01-01','2018-02-01','2018-03-01']:
+        #     # print('first if passed')
+        #     date_data = {}
+        #     for bank_name, row in df.iterrows():
+        #         # print(bank_name, row)
+        #         if isinstance(bank_name, str):
+        #             # print('first if passed')
+        #             if bank_name != 'Банк':  # Skip the header row
+        #                 # print('second if passed')
+        #                 renamed_bank = rename_bank(bank_name)
+        #                 if renamed_bank != "Error":
+        #                     try:
+        #                         value = row[target_col]
+        #                         if pd.notna(value):
+        #                             date_data[renamed_bank] = value
+        #                             # print(f"Added data for {renamed_bank}: {value}")
+        #                         # else:
+        #                         # print(f"Skipping NaN value for {renamed_bank}")
+        #                     except KeyError:
+        #                         ok = 1
+
+        if df is None:
+            print(f"Couldn't read any sheet for date {date} Sheet: {sheet}")
+            continue
+
+        else:
+            # Rename banks and extract data
+            date_data = {}
+            for bank_name, row in df.iterrows():
+                if isinstance(bank_name, str) and bank_name != 'Назва банку':  # Skip the header row
+                    renamed_bank = rename_bank(bank_name)
+                    if renamed_bank != "Error":
+                        try:
+                            value = row[target_col]
+                            if pd.notna(value):
+                                date_data[renamed_bank] = value
+                                # print(f"Added data for {renamed_bank}: {value}")
+                            # else:
+                                # print(f"Skipping NaN value for {renamed_bank}")
+                        except KeyError:
+                            ok = 1
+                            # print(f"Column {target_col} not found in file for {date}")
+                    # else:
+                        # print(f"Skipping invalid bank name: {bank_name}")
                 # else:
-                    # print(f"Skipping invalid bank name: {bank_name}")
-            # else:
-                # print(f"Skipping non-string bank name or header: {bank_name}")
+                    # print(f"Skipping non-string bank name or header: {bank_name}")
 
         if date_data:
             data[date] = date_data
-            # print(f"Added data for {len(date_data)} banks on {date}")
+            # if date in ['2018-01-01','2018-02-01','2018-03-01']:
+            #     ok = 1
+            #     print(f"Added data for {len(date_data)} banks on {date}")
         else:
             print(f"No valid data found for date {date}")
+            # print(df)
+            # df.to_csv('data/extracted/check.csv')
 
     if not data:
         print("No data was extracted. Check the input files and column names.")
@@ -300,6 +347,8 @@ def find_target_column_wrapper(file_path, sheet_name, column, date):
             target_col = find_target_column(df, col)
             # print('df found:', df, target_col)
             # df.to_csv('data/extracted/check.csv')
+            # if date.startswith('2018'):
+            #     print('\n\nDate: ', date, 'Column looked for: ', col, '\nColumn found: ', target_col)
             return target_col, df
         if date in ['2011-10-01']:
             df = pd.read_excel(file_path, sheet_name=sheet_name, header=2, index_col=0)
@@ -307,9 +356,24 @@ def find_target_column_wrapper(file_path, sheet_name, column, date):
             target_col = find_target_column(df, col)
             # print('df found:', df, target_col)
             # df.to_csv('data/extracted/check.csv')
+            # if date.startswith('2018'):
+            #     print('\n\nDate: ', date, 'Column looked for: ', col, '\nColumn found: ', target_col)
             return target_col, df
+        if date in ['2018-01-01', '2018-02-01', '2018-03-01']:
+            ok=1
+        #     df = pd.read_excel(file_path, sheet_name=5, header=4, index_col=1)
+        # #     # print('hheeeeeeeeeeeelp', df)
+        #     target_col = find_target_column(df, col)
+        #     # if target_col is None:
+        #     #     print(df[col])
+        #     print('target col found:', target_col)
+        #     #
+        #     # df.to_csv('data/extracted/check.csv')
+        #     return target_col, df
 
         print(f"Warning: Target column '{col}' not found in {date}")
+    # if date.startswith('2018'):
+    #     print('\n\nDate: ', date, 'Column looked for: ', col, '\nColumn found: ', target_col)
     return target_col, df
 
 def rename_bank(bank_name, csv_file_path='data/original/Aggregation/more_unique_banks.csv'):
@@ -853,15 +917,193 @@ def rainbow_print(text):
             color_index += 1
     print(rainbow_text)
 
-def rainbow_print_save(text):
-    colors = [Fore.RED, Fore.YELLOW, Fore.GREEN, Fore.CYAN, Fore.BLUE, Fore.MAGENTA]
-    rainbow_text = ""
-    color_index = 0
-    for char in text:
-        if char.isspace():
-            rainbow_text += char
+def get_IR(interbank=True):
+    df = pd.read_excel('data/original/Міжбанк та ключова процентна ставка.xlsx')
+    new_df = pd.DataFrame()
+    new_df['Date'] = df['Date']
+    if interbank:
+        new_df['IR'] = df['Interbank IR']
+        new_df.to_csv('data/extracted/Interbank.csv', index=False)
+    else:
+        new_df['IR'] = df['Policy IR']
+        new_df.to_csv('data/extracted/Policy.csv', index=False)
+
+@contextmanager
+def suppress_output():
+    # Redirects the standard output to null
+    with open(os.devnull, 'w') as fnull:
+        old_stdout = sys.stdout
+        sys.stdout = fnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+
+def create_median_file(input_csv_path, output_csv_path, name, statistic='median'):
+    # Read the CSV file
+    df = pd.read_csv(input_csv_path)
+
+    # Check if the first column is 'Date' and set it as index
+    if 'Date' in df.columns:
+        df.set_index('Date', inplace=True)
+
+    # Calculate the specified statistic for each row
+    if statistic == 'median':
+        result = df.median(axis=1)
+    elif statistic == 'mean':
+        result = df.mean(axis=1)
+    else:
+        raise ValueError("Statistic must be 'median' or 'mean'")
+
+    # Create a new DataFrame with the results
+    result_df = pd.DataFrame({statistic: result})
+    if statistic == 'median':
+        result_df = result_df.rename(columns={'median': name})
+    elif statistic == 'mean':
+        result_df = result_df.rename(columns={'mean': name})
+    else:
+        raise ValueError("Statistic must be 'median' or 'mean'")
+
+    # Save the result to a new CSV file with dates in the first column
+    result_df.to_csv(output_csv_path, index=True)
+
+
+def combine_csvs_row_by_row(*input_files, output_file):
+    # Initialize an empty DataFrame to store the merged result
+    combined_df = None
+
+    # Read and merge each input CSV file
+    for file in input_files:
+        df = pd.read_csv(file)
+
+        if combined_df is None:
+            combined_df = df
         else:
-            color = colors[color_index % len(colors)]
-            rainbow_text += f"{Style.BRIGHT}{color}{char}{Style.RESET_ALL}"
-            color_index += 1
-    return rainbow_text
+            # Merge the new DataFrame with the existing one, using 'outer' join on 'Date'
+            combined_df = pd.merge(combined_df, df, on='Date', how='outer')
+
+    # Sort the combined DataFrame by the 'Date' column
+    combined_df.sort_values(by='Date', inplace=True)
+
+    # Save the combined DataFrame to a new CSV file
+    combined_df.to_csv(output_file, index=False)
+
+
+def combine_bank_metrics(file_paths: List[Union[str, Tuple[str, str]]], common_metrics: List[str],
+                         output_path: str) -> None:
+    """
+    Combine multiple CSV files containing bank metrics into a single CSV file.
+
+    Args:
+    file_paths (List[Union[str, Tuple[str, str]]]): List of paths to the input CSV files.
+                                                    Each item can be either a string (file path) or
+                                                    a tuple (file path, metric name).
+    common_metrics (List[str]): List of metric names that are common to all banks.
+    output_path (str): Path where the output CSV file will be saved.
+
+    Returns:
+    None
+    """
+    # Initialize lists to store DataFrames
+    bank_specific_dfs = []
+    common_dfs = {}
+
+    # Process each input file
+    for file_item in file_paths:
+        if isinstance(file_item, tuple):
+            file_path, metric_name = file_item
+        else:
+            file_path = file_item
+            metric_name = os.path.splitext(os.path.basename(file_path))[0]
+
+        # Read the CSV file
+        df = pd.read_csv(file_path)
+
+        if metric_name in common_metrics:
+            # For common metrics, store the DataFrame as is
+            common_dfs[metric_name] = df
+        else:
+            # For bank-specific metrics, melt the DataFrame
+            df_melted = df.melt(id_vars=['Date'], var_name='Bank', value_name=metric_name)
+            bank_specific_dfs.append(df_melted)
+
+    # Merge all bank-specific DataFrames
+    if bank_specific_dfs:
+        combined_df = bank_specific_dfs[0]
+        for df in bank_specific_dfs[1:]:
+            combined_df = pd.merge(combined_df, df, on=['Date', 'Bank'], how='outer')
+    else:
+        combined_df = pd.DataFrame(columns=['Date', 'Bank'])
+
+    # Add common metrics to the combined DataFrame
+    for metric_name, df in common_dfs.items():
+        # Create a temporary DataFrame with the common metric for all banks
+        temp_df = combined_df[['Date', 'Bank']].merge(df, on='Date', how='left')
+        temp_df = temp_df.rename(columns={temp_df.columns[-1]: metric_name})
+
+        # Merge this temporary DataFrame with the combined DataFrame
+        combined_df = pd.merge(combined_df, temp_df[['Date', 'Bank', metric_name]], on=['Date', 'Bank'], how='left')
+
+    # Sort the DataFrame by Date and Bank
+    combined_df = combined_df.sort_values(['Date', 'Bank'])
+
+    # Save the combined DataFrame to a CSV file
+    combined_df.to_csv(output_path, index=False)
+    print(f"Combined data saved to {output_path}")
+
+def sum_csv_files(file1_path, file2_path, output_path):
+    # Read the CSV files
+    df1 = pd.read_csv(file1_path, index_col='Date')
+    df2 = pd.read_csv(file2_path, index_col='Date')
+
+    # Get the original column order
+    original_columns = df1.columns.tolist()
+
+    # Ensure both dataframes have the same columns
+    all_columns = df1.columns.union(df2.columns)
+    df1 = df1.reindex(columns=all_columns, fill_value=0)
+    df2 = df2.reindex(columns=all_columns, fill_value=0)
+
+    # Function to convert to numeric, replacing non-numeric values with 0
+    def to_numeric(x):
+        return pd.to_numeric(x, errors='coerce').fillna(0)
+
+    # Apply the conversion to both dataframes
+    df1 = df1.apply(to_numeric)
+    df2 = df2.apply(to_numeric)
+
+    # Sum the dataframes
+    result_df = df1.add(df2, fill_value=0)
+
+    # Reorder columns to match the original order, adding any new columns at the end
+    new_columns = [col for col in original_columns if col in result_df.columns]
+    new_columns += [col for col in result_df.columns if col not in original_columns]
+    result_df = result_df[new_columns]
+
+    # Write the result to a new CSV file
+    result_df.to_csv(output_path)
+
+    print(f"Summed CSV file has been created at: {output_path}")
+
+def read_bank_names(file_path):
+    bank_names = []
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if row:  # Ensure the row is not empty
+                bank_names.append(row[0])  # Assuming each row has a single column
+    return bank_names
+
+def filter_banks(csv_file, banks_list_path, output_file, keep=True):
+    banks_list = read_bank_names(banks_list_path)
+
+    df = pd.read_csv(csv_file)
+
+    if keep:
+        filtered_df = df[df['Bank'].isin(banks_list)]
+    else:
+        filtered_df = df[~df['Bank'].isin(banks_list)]
+
+    # Save the filtered DataFrame to a new CSV file
+    filtered_df.to_csv(output_file, index=False)
+    print(f"Filtered data saved to {output_file}")

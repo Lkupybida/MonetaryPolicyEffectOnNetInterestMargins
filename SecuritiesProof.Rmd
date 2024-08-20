@@ -1,0 +1,168 @@
+---
+title: "Checking if Securities are a good substitute for Liquid Assets(Refinanced by NBU)"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+# Libraries
+
+```{r}
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stargazer))
+suppressPackageStartupMessages(library(forecast))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(stats))
+suppressPackageStartupMessages(library(lfe))
+suppressPackageStartupMessages(library(ggplot2))
+```
+
+# Extracting data
+
+```{r}
+refinanced <- read_csv("data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", show_col_types = FALSE)
+
+securities <- read.csv("data/extracted/2018_to_now_monthly/securities.csv", )
+
+securities <- securities[securities$Date >= "2019-01-01", ]
+securities <- securities[securities$Date < "2024-04-01", ]
+```
+
+# Averaged data
+
+## Regression
+
+```{r}
+sec_aver <- rowMeans(as.data.frame(lapply(securities[,-1][, sapply(securities[,-1], is.numeric)], function(x) as.numeric(as.character(x)))), na.rm = TRUE)
+
+ref_aver <- rowMeans(as.data.frame(lapply(refinanced[,-1][, sapply(refinanced[,-1], is.numeric)], function(x) as.numeric(as.character(x)))), na.rm = TRUE)
+date <- securities[['Date']]
+
+averaged_data <- data.frame(Date = date, Securities_Average = sec_aver, Refinanced_Average = ref_aver)
+
+colnames(averaged_data) <- c("date", "Refinanced", "Securities")
+
+model <- lm(Refinanced ~ Securities, data = averaged_data)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+```
+
+## Plots comparison
+
+```{r}
+averaged_data$date <- as.Date(averaged_data$date)
+
+ggplot(averaged_data, aes(x = date)) + 
+  geom_line(aes(y = Refinanced, color = "Refinanced", linetype = "Refinanced"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities, color = "Securities", linetype = "Securities"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities * 0.364 - 1010344, color = "Securities adj.", linetype = "Securities adj."), linewidth = 0.8) + 
+  labs(title = "Oschadbank Refinanced and Securities Over Time",
+       x = "Date",
+       y = "Value",
+       color = "Legend",
+       linetype = "Legend") +
+  theme_minimal() +
+  scale_color_manual(values = c("Refinanced" = "blue", "Securities" = "green", "Securities adj." = "red")) +
+  scale_linetype_manual(values = c("Refinanced" = "solid", "Securities" = "solid", "Securities adj." = "dashed"))
+```
+
+# Oschadbank
+
+```{r}
+sec_oschad <- securities['ОЩАДБАНК']
+ref_oschad <- refinanced['oschadbank']
+date <- securities['Date']
+
+oschad <- data.frame(Date = date, Refinanced = ref_oschad, Securities = sec_oschad)
+
+colnames(oschad) <- c("date", "Refinanced", "Securities")
+```
+
+## Regression
+
+```{r}
+model <- lm(Refinanced ~ Securities, data = oschad)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+```
+
+## Plots comparasion
+
+```{r}
+oschad$date <- as.Date(oschad$date)
+
+ggplot(oschad, aes(x = date)) + 
+  geom_line(aes(y = Refinanced, color = "Refinanced", linetype = "Refinanced"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities, color = "Securities", linetype = "Securities"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities * 1.169 + 30885906.000, color = "Securities adj.", linetype = "Securities adj."), linewidth = 0.8) + 
+  labs(title = "Oschadbank Refinanced and Securities Over Time",
+       x = "Date",
+       y = "Value",
+       color = "Legend",
+       linetype = "Legend") +
+  theme_minimal() +
+  scale_color_manual(values = c("Refinanced" = "blue", "Securities" = "green", "Securities adj." = "red")) +
+  scale_linetype_manual(values = c("Refinanced" = "solid", "Securities" = "solid", "Securities adj." = "dashed"))
+```
