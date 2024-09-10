@@ -229,6 +229,37 @@ def share_of_securities():
     progress_bar.close()
     print(Securities)
 
+def share_of_liquid_assets():
+    file = 'refinanced_by_nbu.csv'
+
+    add_one_day_to_dates('data/extracted/2018_to_now_monthly/' + file,
+                         'data/extracted/2018_to_now_monthly_shift/' + file, 1, minus=True)
+    check = True
+    if check:
+        make_quarterly('data/extracted/2018_to_now_monthly/' + file,
+                       'data/extracted/2018_to_now_quaterly/' + file, sum=False)
+
+        add_one_day_to_dates('data/extracted/2018_to_now_quaterly/' + file,
+                             'data/extracted/with_zeros/' + file, 1)
+
+
+    remove_zeros('data/extracted/with_zeros/' + file, 'data/extracted/complete/' + file)
+    print(f"Processed {file} data saved")
+    total_steps = 5
+    progress_bar = tqdm(total=total_steps, desc="Relative Liquid Assets")
+
+    with suppress_output():
+
+        # split_connect_v2('refinanced_by_nbu.csv')
+        progress_bar.update(1)
+
+        divide_csv_values('data/extracted/complete/refinanced_by_nbu.csv', 'data/extracted/complete/total_assets.csv',
+                          'data/relative/refinanced_by_nbu_to_total_assets.csv')
+        progress_bar.update(1)
+
+    progress_bar.close()
+    print(LiquidAss)
+
 def extract_data_to_relative_vars():
     total_steps = 10
     progressss_bar = tqdm(total=total_steps, desc="Creating Dataset")

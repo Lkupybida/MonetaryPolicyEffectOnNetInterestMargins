@@ -90,3 +90,4 @@ generate_stargazer_with_titles <- function(models, titles) {
   # Print the modified output
   cat(output, sep = "\n")
 }
+

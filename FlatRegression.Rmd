@@ -1,5 +1,5 @@
 ---
-title: "Simple regressions NII on IR"
+title: "Decompositions"
 output:
   html_document:
     toc: yes
@@ -66,134 +66,129 @@ h1, h2, h3, h4, h5, h6 {
 
 </style>
 ```
+
 # Libraries
 
 ```{r}
-library(readr)
-library(dplyr)
-library(stargazer)
-library(forecast)
-library(lubridate)
-library(stats)
-library(lfe)
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stargazer))
+suppressPackageStartupMessages(library(forecast))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(stats))
+suppressPackageStartupMessages(library(lfe))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/functions.R"))
 ```
 
-## Reading data
+# Reading data
 
 ```{r}
 data <- read_csv("data/for_regressing/flattened.csv")
-full_data <- data
+functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+not_functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+gov <- read_csv("data/for_regressing/banks_groups/gov_or_private/gov.csv", show_col_types = FALSE)  %>% select(-OVDP)
+private <- read_csv("data/for_regressing/banks_groups/gov_or_private/private.csv", show_col_types = FALSE)  %>% select(-OVDP)
 ```
 
-## Adding lags
-
-```{r}
-data_adjusted <- data %>%
-  arrange(Date) %>%
-  mutate(IR_diff = IR - lag(IR, default = NA))
-
-data_adjusted
-```
-
-# Modeling
-
-## OLS
-
-```{r}
-model1 <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA, data = data)
-
-stargazer(model1, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
-```
-
-## Fixed bank effect
+# Generic model
 
 ```{r}
 data$Bank <- as.factor(data$Bank)
-
-model2 <- felm(NII ~ AE + LEV + CASH + NCI + TA + IR | Bank | 0 | 0, data = data)
-
-stargazer(model1, model2, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
+model <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + SEC | Bank | 0 | Bank, data = data)
+generate_stargazer_with_titles(list(model), c('Generic FE model'))
 ```
 
-## Fixed bank & time effect
+# Pre-2014
+
+## Data
 
 ```{r}
-data$Bank <- as.factor(data$Bank)
-data$Date <- as.factor(data$Date)
-
-model3 <- felm(NII ~ AE + LEV + CASH + NCI + TA + IR | Bank + Date | 0 | 0, data = data)
-
-stargazer(model2, model3, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
-
-getfe(model)
-```
-
-# Splitting into periods
-
-```{r}
-data <- read_csv("data/for_regressing/flattened.csv")
 df_pre2014 <- data[data$Date < "2014-01-01", ]
+functioning_pre2014 <- functioning[functioning$Date < "2014-01-01", ]
+not_functioning_pre2014 <- not_functioning[not_functioning$Date < "2014-01-01", ]
+```
+
+## General model for pre 2014 data
+
+```{r}
+modelpre2014 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + SEC | Bank | 0 | Bank, data = df_pre2014)
+
+generate_stargazer_with_titles(list(model, modelpre2014), c('Generic FE model', 'Pre 2014'))
+```
+
+## Functioning banks vs closed ones
+
+```{r}
+functioning_model_pre2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = functioning_pre2014)
+not_functioning_model_pre2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = not_functioning_pre2014)
+
+generate_stargazer_with_titles(list(functioning_model_pre2014, not_functioning_model_pre2014, modelpre2014), c('Functioning', 'Not functioning', 'Pre 2014'))
+```
+
+# Post-2014
+
+## Data
+
+```{r}
 df_after2014 <- data[data$Date >= "2014-01-01", ]
-df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-03-01", ]
-df_after2022 <- data[data$Date >= "2022-03-01", ]
+top25_after2014 <- top25[top25$Date >= "2014-01-01", ]
+rest_after2014 <- rest[rest$Date >= "2014-01-01", ]
 ```
 
-## Pre-2014
+## General model for post 2014 data
 
 ```{r}
-df_pre2014$Date <- as.Date(df_pre2014$Date)
-df_pre2014$Bank <- as.factor(df_pre2014$Bank)
+model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014)
 
-model4 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA | Bank | 0 | Bank, data = df_pre2014)
-
-# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
-
-stargazer(model2, model4, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
+generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model', 'Post 2014'))
 ```
 
-## Post-2014
+## Top 25 or not
 
 ```{r}
-df_after2014$Date <- as.Date(df_after2014$Date)
-df_after2014$Bank <- as.factor(df_after2014$Bank)
+top25_model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top25_after2014)
+rest_model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest_after2014)
 
-model5 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA |  Bank | 0 | Bank, data = df_after2014)
-
-# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
-
-stargazer(model4, model5, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
+generate_stargazer_with_titles(list(top25_model_after2014, rest_model_after2014, model_after2014), c('Top 25', 'Rest', 'Post 2014'))
 ```
 
-## Post-2014, Pre-2022
+# 2017 to 2023 (2nd quart)
+
+## Data
 
 ```{r}
-df_after2014pre2022$Date <- as.Date(df_after2014pre2022$Date)
-df_after2014pre2022$Bank <- as.factor(df_after2014pre2022$Bank)
-
-model6 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA | Bank | 0 | Bank, data = df_after2014pre2022)
-
-# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
-
-stargazer(model4, model5, model6, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model)))
+df_after2017 <- data[data$Date >= "2017-01-01", ]
+df_after2017pre2023 <- df_after2017[df_after2017$Date < "2023-07-01", ]
+gov_after2017 <- gov[gov$Date >= "2017-01-01", ]
+private_after2017 <- private[private$Date >= "2017-01-01", ]
+gov_after2017pre2023 <- gov_after2017[gov_after2017$Date < "2023-07-01", ]
+private_after2017pre2023 <- private_after2017[private_after2017$Date < "2023-07-01", ]
 ```
 
-## Post-2022
+## General model
 
 ```{r}
-df_after2022$Date <- as.Date(df_after2022$Date)
-df_after2022$Bank <- as.factor(df_after2022$Bank)
+model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2017pre2023)
 
-model7 <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA |  Bank | 0 | Bank, data = df_after2022)
-
-# model <- lm(NII ~ AE + LEV + CASH + IR + NCI + TA + Date + Bank, data = data)
-
-stargazer(model4, model5, model6, model7, type = "text", align = TRUE, single.row = TRUE)
-cat(paste("AIC: ", AIC(model))) 
-
+generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model', 'Post 2017, Pre 2023'))
 ```
+
+## Gov. owned vs private banks
+
+```{r}
+gov_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = gov_after2017pre2023)
+private_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
+model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2017pre2023)
+
+generate_stargazer_with_titles(list(gov_model_after2017pre2023, private_model_after2017pre2023, model_after2017pre2023), c('Gov', 'Private', 'General'))
+```
+
+# Pre 2014 to Post 2014 compared
+
+```{r}
+generate_stargazer_with_titles(list(model, modelpre2014, model_after2014), c('All time', 'Pre 2014', 'Post 2014'))
+```
+

@@ -1,0 +1,209 @@
+---
+title: "Liquidity & Securities"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  # pdf_document:
+  #   toc: yes
+---
+
+```{=html}
+<style>
+  body {
+  background-color: white;
+  color: black;
+}
+
+pre, code {
+  background-color: lightgray;
+  color: grey;
+}
+
+pre:not([class]) {
+  background-color: lightgray;
+  color: black;
+}
+
+pre {
+  border: 0px solid gray;
+}
+
+.hljs-string {
+  color: darkgreen;
+}
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-literal {
+  color: brown;
+}
+
+.hljs-keyword {
+  color: purple;
+}
+
+.tocify {
+  border: 0px;
+}
+
+.list-group-item {
+  background-color: lightgray;
+  color: black;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: blue;
+  border-color: blue;
+  color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: black;
+}
+
+</style>
+```
+
+# Libraries
+
+```{r}
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stargazer))
+suppressPackageStartupMessages(library(forecast))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(stats))
+suppressPackageStartupMessages(library(lfe))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(tidyr))
+```
+
+# Extracting data
+
+```{r}
+data <- read_csv("data/for_regressing/flattened.csv", show_col_types = FALSE)
+data <- na.omit(data)
+all_data <- data
+result <- data %>%
+  group_by(Date) %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE))
+```
+
+```{r}
+data <- data[data$Date >= "2022-01-01", ]
+data <- data[data$Date < "2024-04-01", ]
+```
+
+## Regression
+
+### Post 2022
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+model_sec <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + SEC | Bank | 0 | Bank, data = data)
+model_las <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + LAS | Bank | 0 | Bank, data = data)
+generate_stargazer_with_titles(list(model_sec, model_las), c('Securities', 'Liquid Assets'))
+```
+
+### All time
+
+```{r}
+data$Bank <- as.factor(data$Bank)
+model_sec <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + SEC | Bank | 0 | Bank, data = all_data)
+model_las <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + LAS | Bank | 0 | Bank, data = all_data)
+generate_stargazer_with_titles(list(model_sec, model_las), c('Securities', 'Liquid Assets'))
+```
+
+```{r}
+OLS_model <- lm(LAS ~ SEC, data = data)
+FE_model <- felm(LAS ~ SEC | Bank | 0 | Bank, data = data)
+Averaged_model <- lm(LAS ~ SEC, data = result)
+# 'Liquid Assets by Securities'
+generate_stargazer_with_titles(list(OLS_model, FE_model, Averaged_model), c('OLS', 'FE', 'Averaged'))
+```
+
+## Plots comparison
+
+```{r}
+plot_data <- result %>%
+  select(Date, NII, SEC, LAS)
+
+plot_data$NII <- plot_data$NII / 0.05 - 0.4
+
+# Convert Date to Date type if it's not already
+plot_data$Date <- as.Date(plot_data$Date)
+
+# Melt the dataframe to long format for ggplot2
+plot_data_long <- plot_data %>%
+  pivot_longer(cols = c(NII, SEC, LAS), names_to = "Variable", values_to = "Value")
+
+# Plot the data
+ggplot(plot_data_long, aes(x = Date, y = Value, color = Variable)) +
+  geom_line() +
+  labs(title = "Time Series Plot of NII, SEC, and LAS",
+       x = "Date",
+       y = "Value") +
+  theme_minimal()
+```
+
+```{r}
+result$date <- as.Date(result$Date)
+p <- ggplot(result, aes(x = date)) + 
+  geom_line(aes(y = LAS, color = "LAS", linetype = "LAS"), linewidth = 0.8) + 
+  geom_line(aes(y = SEC, color = "SEC", linetype = "SEC"), linewidth = 0.8) + 
+  geom_line(aes(y = SEC * 0.865 + 0.074, color = "SEC adj.", linetype = "SEC adj."), linewidth = 0.8) + 
+  labs(title = "Oschadbank Refinanced and Securities Over Time",
+       x = "Date",
+       y = "Value",
+       color = "Legend",
+       linetype = "Legend") +
+  theme_custom() +
+  scale_color_manual(values = c("LAS" = "cyan", "SEC" = "yellow", "SEC adj." = "red")) +
+  scale_linetype_manual(values = c("LAS" = "solid", "SEC" = "solid", "SEC adj." = "dashed"))
+name <- "~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/plots/securitiesProof.png"
+ggsave(name, plot = p, width = width, height = height, dpi = dpi)
+  
+display_plot(name)
+```
+
+# Oschadbank
+
+```{r}
+sec_oschad <- securities['ОЩАДБАНК']
+ref_oschad <- refinanced['oschadbank']
+date <- securities['Date']
+
+oschad <- data.frame(Date = date, Refinanced = ref_oschad, Securities = sec_oschad)
+
+colnames(oschad) <- c("date", "Refinanced", "Securities")
+```
+
+## Regression
+
+```{r}
+model <- lm(Refinanced ~ Securities, data = oschad)
+
+stargazer(model, type = "text", align = TRUE, single.row = TRUE)
+```
+
+## Plots comparasion
+
+```{r}
+oschad$date <- as.Date(oschad$date)
+
+ggplot(oschad, aes(x = date)) + 
+  geom_line(aes(y = Refinanced, color = "Refinanced", linetype = "Refinanced"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities, color = "Securities", linetype = "Securities"), linewidth = 0.8) + 
+  geom_line(aes(y = Securities * 1.169 + 30885906.000, color = "Securities adj.", linetype = "Securities adj."), linewidth = 0.8) + 
+  labs(title = "Oschadbank Refinanced and Securities Over Time",
+       x = "Date",
+       y = "Value",
+       color = "Legend",
+       linetype = "Legend") +
+  theme_minimal() +
+  scale_color_manual(values = c("Refinanced" = "blue", "Securities" = "green", "Securities adj." = "red")) +
+  scale_linetype_manual(values = c("Refinanced" = "solid", "Securities" = "solid", "Securities adj." = "dashed"))
+```

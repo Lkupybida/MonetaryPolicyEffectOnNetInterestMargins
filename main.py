@@ -20,6 +20,7 @@ if __name__ == "__main__":
                  ('data/relative/net_interest_income_to_total_assets.csv', 'NII'),
                  ('data/relative/total_assets.csv', 'TA'),
                  ('data/relative/securities_to_total_assets.csv', 'SEC'),
+                 ('data/relative/refinanced_by_nbu_to_total_assets.csv', 'LAS'),
                  ('data/relative/Interbank.csv', 'IR'),
                  ('data/relative/Interbank_lag/Interbank_lag1.csv', 'IR_lag1'),
                  ('data/relative/Interbank_lag/Interbank_lag2.csv', 'IR_lag2'),
@@ -49,18 +50,31 @@ if __name__ == "__main__":
 
     # combine_bank_metrics(variables, common_metrics, 'data/for_regressing/flattened.csv')
 
-    filter_banks('data/for_regressing/flattened.csv',
-                 'data/for_regressing/banks_groups/functioning_or_not/functioning_banks_list.csv',
-                 'data/for_regressing/banks_groups/functioning_or_not/functioning.csv')
-    filter_banks('data/for_regressing/flattened.csv',
-                 'data/for_regressing/banks_groups/functioning_or_not/functioning_banks_list.csv',
-                 'data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv',
-                 keep=False)
 
-    filter_banks('data/for_regressing/flattened.csv',
-                 'data/for_regressing/banks_groups/top25_or_not/top25_banks_list.csv',
-                 'data/for_regressing/banks_groups/top25_or_not/top25.csv')
-    filter_banks('data/for_regressing/flattened.csv',
-                 'data/for_regressing/banks_groups/top25_or_not/top25_banks_list.csv',
-                 'data/for_regressing/banks_groups/top25_or_not/rest.csv',
-                 keep=False)
+
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/functioning_or_not/functioning_banks_list.csv',
+    #              'data/for_regressing/banks_groups/functioning_or_not/functioning.csv')
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/functioning_or_not/functioning_banks_list.csv',
+    #              'data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv',
+    #              keep=False)
+    #
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/top25_or_not/top25_banks_list.csv',
+    #              'data/for_regressing/banks_groups/top25_or_not/top25.csv')
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/top25_or_not/top25_banks_list.csv',
+    #              'data/for_regressing/banks_groups/top25_or_not/rest.csv',
+    #              keep=False)
+    #
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/gov_or_private/gov_list.csv',
+    #              'data/for_regressing/banks_groups/gov_or_private/gov.csv')
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/gov_or_private/gov_list.csv',
+    #              'data/for_regressing/banks_groups/gov_or_private/private.csv',
+    #              keep=False)
+create_median_file('data/extracted/complete/net_interest_income.csv',
+                           'data/relative/averaged/NII_averaged_not_relative.csv', 'NII',
+                           statistic = 'mean')

@@ -155,6 +155,11 @@ plot_column <- function(filename, chosen_column) {
 Type any R code in the chunk, for example:
 
 ```{r}
+plot_column("data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", "oschadbank")
+plot_column("data/extracted/2018_to_now_monthly/securities.csv", "ОЩАДБАНК")
+```
+
+```{r}
 bank = "ПРИВАТБАНК"
 plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly/admin_expenses.csv', bank)
 plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/extracted/2009_to_2017_quaterly_diff/admin_expenses.csv', bank)
