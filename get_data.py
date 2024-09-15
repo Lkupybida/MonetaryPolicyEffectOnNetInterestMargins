@@ -7,7 +7,7 @@ def relative_total_assets():
     progress_bar = tqdm(total=total_steps, desc="Relative Total Assets")
 
     with suppress_output():
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
@@ -24,13 +24,13 @@ def net_interest_income_to_total_assets():
     progress_bar = tqdm(total=total_steps, desc="Net Interest Income to Total Assets")
 
     with suppress_output():
-        extract_bank_data('Finresults', net_interest_income, 'data/extracted/mixed/net_interest_income.csv')
+        # extract_bank_data('Finresults', net_interest_income, 'data/extracted/mixed/net_interest_income.csv')
         progress_bar.update(1)
 
-        split_connect_v2('net_interest_income.csv', differ=True, Finresults=True)
+        split_connect_v2('net_interest_income.csv', differ=True, Finresults=True, fix2018=True)
         progress_bar.update(1)
 
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
@@ -48,10 +48,10 @@ def net_commision_income_to_total_assets():
     progress_bar = tqdm(total=total_steps, desc="Net Commision Income to Total Assets")
 
     with suppress_output():
-        extract_bank_data('Finresults', commision_income, 'data/extracted/mixed/commision_income.csv')
+        # extract_bank_data('Finresults', commision_income, 'data/extracted/mixed/commision_income.csv')
         progress_bar.update(1)
 
-        extract_bank_data('Finresults', commision_expenses, 'data/extracted/mixed/commision_expenses.csv')
+        # extract_bank_data('Finresults', commision_expenses, 'data/extracted/mixed/commision_expenses.csv')
         progress_bar.update(1)
 
         dates = pd.date_range(start='2009-04-01', end='2017-10-01', freq='3MS').strftime('%Y-%m-%d').tolist()
@@ -66,10 +66,10 @@ def net_commision_income_to_total_assets():
                              'data/extracted/mixed/net_commision_income.csv')
         progress_bar.update(1)
 
-        split_connect_v2('net_commision_income.csv', differ=True, Finresults=True)
+        split_connect_v2('net_commision_income.csv', differ=True, Finresults=True, fix2018=True)
         progress_bar.update(1)
 
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
@@ -87,13 +87,13 @@ def ovdp_to_total_assets():
     progress_bar = tqdm(total=total_steps, desc="OVDP to Total Assets")
 
     with suppress_output():
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
         progress_bar.update(1)
 
-        extract_bank_data('Assets', bonds, 'data/extracted/mixed/ovdp.csv')
+        # extract_bank_data('Assets', bonds, 'data/extracted/mixed/ovdp.csv')
         progress_bar.update(1)
 
         split_connect_v2('ovdp.csv')
@@ -111,13 +111,13 @@ def admin_expenses_to_total_assets():
     progress_bar = tqdm(total=total_steps, desc="Admin Expenses to Total Assets")
 
     with suppress_output():
-        extract_bank_data('Finresults', admin_expenses, 'data/extracted/mixed/admin_expenses.csv')
+        # extract_bank_data('Finresults', admin_expenses, 'data/extracted/mixed/admin_expenses.csv')
         progress_bar.update(1)
 
-        split_connect_v2('admin_expenses.csv', differ=True, expenses=True, Finresults=True)
+        split_connect_v2('admin_expenses.csv', differ=True, expenses=True, Finresults=True, fix2018=True)
         progress_bar.update(1)
 
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
@@ -135,13 +135,13 @@ def capital_to_total_assets():
     progress_bar = tqdm(total=total_steps, desc="Capital to Total Assets")
 
     with suppress_output():
-        extract_bank_data('Capital', capital, 'data/extracted/mixed/capital.csv')
+        # extract_bank_data('Capital', capital, 'data/extracted/mixed/capital.csv')
         progress_bar.update(1)
 
         split_connect_v2('capital.csv')
         progress_bar.update(1)
 
-        extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
+        # extract_bank_data('Assets', total_assets, 'data/extracted/mixed/total_assets.csv')
         progress_bar.update(1)
 
         split_connect_v2('total_assets.csv')
@@ -193,7 +193,7 @@ def share_of_cash():
     progress_bar = tqdm(total=total_steps, desc="Relative Share of Cash Assets")
 
     with suppress_output():
-        extract_bank_data('Assets', cash, 'data/extracted/mixed/cash.csv')
+        # extract_bank_data('Assets', cash, 'data/extracted/mixed/cash.csv')
         progress_bar.update(1)
 
         split_connect_v2('cash.csv')
@@ -261,7 +261,7 @@ def share_of_liquid_assets():
     print(LiquidAss)
 
 def extract_data_to_relative_vars():
-    total_steps = 10
+    total_steps = 11
     progressss_bar = tqdm(total=total_steps, desc="Creating Dataset")
     relative_total_assets()
     progressss_bar.update(1)
@@ -284,6 +284,8 @@ def extract_data_to_relative_vars():
     share_of_securities()
     progressss_bar.update(1)
     suppress_output()
+    share_of_liquid_assets()
+    progressss_bar.update(1)
     rainbow_print('\nDataset completely completed')
 
 def create_composite_dataset(mean=False):

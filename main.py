@@ -67,7 +67,7 @@ if __name__ == "__main__":
     #              'data/for_regressing/banks_groups/top25_or_not/top25_banks_list.csv',
     #              'data/for_regressing/banks_groups/top25_or_not/rest.csv',
     #              keep=False)
-    #
+
     # filter_banks('data/for_regressing/flattened.csv',
     #              'data/for_regressing/banks_groups/gov_or_private/gov_list.csv',
     #              'data/for_regressing/banks_groups/gov_or_private/gov.csv')
@@ -75,6 +75,42 @@ if __name__ == "__main__":
     #              'data/for_regressing/banks_groups/gov_or_private/gov_list.csv',
     #              'data/for_regressing/banks_groups/gov_or_private/private.csv',
     #              keep=False)
-create_median_file('data/extracted/complete/net_interest_income.csv',
-                           'data/relative/averaged/NII_averaged_not_relative.csv', 'NII',
-                           statistic = 'mean')
+
+    # create_median_file('data/extracted/complete/net_interest_income.csv',
+    #                        'data/relative/averaged/NII_averaged_not_relative.csv', 'NII',
+    #                        statistic = 'median')
+
+    # create_median_file('data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv',
+    #                    'data/relative/averaged/refinanced.csv', 'LAS',
+    #                    statistic='median')
+    # create_median_file('data/extracted/2018_to_now_monthly/securities.csv',
+    #                    'data/relative/averaged/securities_mean.csv', 'SEC',
+    #                    statistic = 'mean')
+
+    # combine_csvs_row_by_row('data/relative/averaged/securities2.csv',
+    #                         'data/relative/averaged/refinanced.csv',
+    #                         output_file='data/relative/averaged/securities_and_refinanced.csv')
+
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/top10_or_not/top10_banks_list.csv',
+    #              'data/for_regressing/banks_groups/top10_or_not/top10.csv')
+    # filter_banks('data/for_regressing/flattened.csv',
+    #              'data/for_regressing/banks_groups/top10_or_not/top10_banks_list.csv',
+    #              'data/for_regressing/banks_groups/top10_or_not/rest.csv',
+    #              keep=False)
+
+    filter_banks('data/for_regressing/flattened.csv',
+                 'data/for_regressing/banks_groups/top10nongov_or_not/top10_banks_list.csv',
+                 'data/for_regressing/banks_groups/top10nongov_or_not/top10.csv')
+    filter_banks('data/for_regressing/flattened.csv',
+                 'data/for_regressing/banks_groups/top10nongov_or_not/top10_banks_list.csv',
+                 'data/for_regressing/banks_groups/top10nongov_or_not/rest.csv',
+                 keep=False)
+
+    filter_banks('data/for_regressing/flattened.csv',
+                 'data/for_regressing/banks_groups/top5nongov_or_not/top5_banks_list.csv',
+                 'data/for_regressing/banks_groups/top5nongov_or_not/top5.csv')
+    filter_banks('data/for_regressing/flattened.csv',
+                 'data/for_regressing/banks_groups/top5nongov_or_not/top5_banks_list.csv',
+                 'data/for_regressing/banks_groups/top5nongov_or_not/rest.csv',
+                 keep=False)
