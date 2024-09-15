@@ -82,6 +82,8 @@ complement = "yellow"
 grey = "cyan"
 fill_col = "grey50"
 text_col = "white"
+grid_major_col = "grey80"
+grid_minor_col = background
 width = 16
 height = 7
 dpi = 400
@@ -92,8 +94,8 @@ theme_custom <- function() {
     plot.background = element_rect(fill = background, color = NA),  # Entire plot background
     panel.background = element_rect(fill = background, color = NA),  # Plot panel background
     # Set grid lines
-    panel.grid.major = element_line(color = background),
-    panel.grid.minor = element_line(color = background, linetype = "dotted"),
+    panel.grid.major = element_line(color = grid_major_col, linetype = "dotted"),
+    panel.grid.minor = element_line(color = grid_minor_col, linetype = "dotted", linewidth = 0.6),
     # Customize axis titles and text
     axis.title.x = element_text(size = 14, face = "bold", color = complement),
     axis.title.y = element_text(size = 14, face = "bold", color = complement),
@@ -150,10 +152,11 @@ plot_median_quartiles <- function(file_path, name="~/Documents/GitHub/MonetaryPo
   p <- ggplot(summary_stats, aes(x = Date)) +
     geom_line(aes(y = Median, color = "Median")) +
     geom_ribbon(aes(ymin = Q1, ymax = Q3), alpha = 0.2, fill = fill_col) +
-    geom_vline(xintercept = as.Date("2022-01-01"), color = text_col, linetype = "dashed") +
+    # geom_vline(xintercept = as.Date("2022-01-01"), color = text_col, linetype = "dashed") +
     labs(title = "Median and Quartiles of Values Over Time",
          x = "Date",
          y = "Value") +
+    scale_x_date(date_breaks = "2 years", date_labels = "%Y") +  
     theme_custom() +
     scale_color_manual(name = "Statistic", values = c("Median" = complement)) +
     theme(legend.position = "top")
@@ -178,12 +181,15 @@ plot_column <- function(filename, chosen_column, name="~/Documents/GitHub/Moneta
   
   # Plot the chosen column
   p <- ggplot(data, aes(x = Date, y = get(chosen_column))) +
-    geom_line(color = complement) +
-    geom_vline(xintercept = as.Date("2022-01-01"), color = text_col, linetype = "dashed") +
+    geom_line(color = complement, linetype = "dashed") +
+    geom_vline(xintercept = as.Date("2022-01-01"), color = "red", linetype = "dashed", linewidth = 0.9) +
     labs(title = paste("Time Series Plot of", chosen_column),
          x = "Date",
          y = chosen_column) +
-    theme_custom()
+    scale_x_date(date_breaks = "2 years", date_labels = "%Y") +  # Labels and gridlines every 2 years
+    theme_custom() # +
+    # theme(panel.grid.major.x = element_line(colour = "red", linetype = "dashed"))  # Adding vertical gridlines
+  
   ggsave(name, plot = p, width = width, height = height, dpi = dpi)
   
   display_plot(name)
@@ -239,17 +245,11 @@ p <- ggplot(combined_data, aes(x = Date, y = IR, color = Source)) +
        x = "Date",
        y = chosen_column) +
   theme_custom() +
-  scale_color_manual(values = c(background, complement))
+  scale_color_manual(values = c("cyan", complement))
 name <- "~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/plots/bothIR.png"
 ggsave(name, plot = p, width = width, height = height, dpi = dpi)
   
 display_plot(name)
-  # theme(
-  #   plot.title = element_text(size = 8),          # Smaller title size
-  #   axis.title = element_text(size = 2),          # Smaller axis title size
-  #   legend.title = element_text(size = 5),         # Smaller legend title size
-  #   legend.text = element_text(size = 4)           # Smaller legend label size
-  # )  # Customize colors for each line
 ```
 
 ```{r}
@@ -257,10 +257,6 @@ plot_median_quartiles("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargi
 ```
 
 Now, click the **Run** button on the chunk toolbar to [execute](https://www.jetbrains.com/help/pycharm/r-markdown.html#run-r-code) the chunk code. The result should be placed under the chunk. Click the **Knit and Open Document** to build and preview an output.
-
-```{r}
-plot_median_quartiles("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/relative/ovdp_to_total_assets.csv", "~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/plots/ovdp.png")
-```
 
 ```{r}
 plot_median_quartiles("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/relative/net_commision_income_to_total_assets.csv", "~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/plots/netCommisionIncome.png")

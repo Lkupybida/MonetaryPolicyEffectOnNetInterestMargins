@@ -562,13 +562,13 @@ def add_one_day_to_dates(csv_path, output_path, num=1, minus=False):
     # Save the modified DataFrame to a new CSV file
     df.to_csv(output_path, index=False)
 
-def multiply_data_by_negative_one(file_path):
+def multiply_data_by_negative_one(file_path, num=-1):
     # Read the CSV file
     df = pd.read_csv(file_path)
     output_path = file_path
 
     # Apply the multiplication by -1 to all numeric values
-    df = df.map(lambda x: x * -1 if isinstance(x, (int, float)) else x)
+    df = df.map(lambda x: x * num if isinstance(x, (int, float)) else x)
 
     # Save the modified DataFrame to a new CSV file
     df.to_csv(output_path, index=False)
@@ -785,7 +785,7 @@ def multiply_elements(lst, multiplier):
     # Multiply all elements except the first one by the given multiplier
     return [lst[0]] + [x * multiplier for x in lst[1:]]
 
-def split_connect_v2(file, differ = False, expenses=False, Finresults=False):
+def split_connect_v2(file, differ = False, expenses=False, Finresults=False, fix2018=False):
     path = 'data/extracted/mixed/'
     split_csv_at_time(path + file, '2018-01-01', 'Date',
                       'data/extracted/2009_to_2017_quaterly/' + file,
@@ -830,9 +830,16 @@ def split_connect_v2(file, differ = False, expenses=False, Finresults=False):
                      'data/extracted/2018_to_now_quaterly_shifted/' + file, 'data/extracted/with_zeros/' + file)
 
     remove_zeros('data/extracted/with_zeros/' + file, 'data/extracted/complete/' + file)
+    if fix2018:
+        fix = extract_row_by_date('data/extracted/complete/' + file, '2018-04-01')
+        fixed = multiply_except_first_for2018(fix, 3/2)
+        update_row_by_date('data/extracted/complete/' + file, '2018-04-01', fixed)
     print(f"Processed {file} data saved")
 
-
+def multiply_except_first_for2018(lst, multiplier):
+    if len(lst) < 2:
+        return lst  # Return list as-is if it has less than 2 elements
+    return [lst[0]] + [x * multiplier for x in lst[1:]]
 def remove_zeros(path_in, path_out):
     df = pd.read_csv(path_in)
 
@@ -939,6 +946,7 @@ def suppress_output():
         finally:
             sys.stdout = old_stdout
 
+
 def create_median_file(input_csv_path, output_csv_path, name, statistic='median'):
     # Read the CSV file
     df = pd.read_csv(input_csv_path)
@@ -946,6 +954,9 @@ def create_median_file(input_csv_path, output_csv_path, name, statistic='median'
     # Check if the first column is 'Date' and set it as index
     if 'Date' in df.columns:
         df.set_index('Date', inplace=True)
+
+    # Convert all columns to numeric, forcing errors to NaN
+    df = df.apply(pd.to_numeric, errors='coerce')
 
     # Calculate the specified statistic for each row
     if statistic == 'median':
@@ -961,8 +972,6 @@ def create_median_file(input_csv_path, output_csv_path, name, statistic='median'
         result_df = result_df.rename(columns={'median': name})
     elif statistic == 'mean':
         result_df = result_df.rename(columns={'mean': name})
-    else:
-        raise ValueError("Statistic must be 'median' or 'mean'")
 
     # Save the result to a new CSV file with dates in the first column
     result_df.to_csv(output_csv_path, index=True)

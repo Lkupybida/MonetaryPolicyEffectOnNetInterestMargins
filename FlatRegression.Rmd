@@ -181,14 +181,24 @@ generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model
 ```{r}
 gov_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = gov_after2017pre2023)
 private_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
-model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2017pre2023)
+model_model_after2017pre2023 <-  <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
 
-generate_stargazer_with_titles(list(gov_model_after2017pre2023, private_model_after2017pre2023, model_after2017pre2023), c('Gov', 'Private', 'General'))
+generate_stargazer_with_titles(list(gov_model_after2017pre2023, private_model_after2017pre2023, model_after2014), c('Gov', 'Private', 'General'))
 ```
 
 # Pre 2014 to Post 2014 compared
 
 ```{r}
-generate_stargazer_with_titles(list(model, modelpre2014, model_after2014), c('All time', 'Pre 2014', 'Post 2014'))
+generate_stargazer_with_titles(list(modelpre2014, model_after2014), c('Pre 2014', 'Post 2014'))
 ```
 
+# Post 2022
+
+```{r}
+df_after2022 <- data[data$Date >= "2022-01-01", ]
+df_pre2022 <- data[data$Date < "2022-01-01", ]
+df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-01-01", ]
+model_after2022 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2022)
+model_after2014pre2022 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014pre2022)
+generate_stargazer_with_titles(list(model_after2014pre2022, model_after2022), c('2014-2022', 'Post 2022'))
+```

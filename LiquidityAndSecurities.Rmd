@@ -79,6 +79,7 @@ suppressPackageStartupMessages(library(stats))
 suppressPackageStartupMessages(library(lfe))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/functions.R"))
 ```
 
 # Extracting data
@@ -118,11 +119,11 @@ generate_stargazer_with_titles(list(model_sec, model_las), c('Securities', 'Liqu
 ```
 
 ```{r}
-OLS_model <- lm(LAS ~ SEC, data = data)
-FE_model <- felm(LAS ~ SEC | Bank | 0 | Bank, data = data)
+# OLS_model <- lm(LAS ~ SEC, data = data)
+# FE_model <- felm(LAS ~ SEC | Bank | 0 | Bank, data = data)
 Averaged_model <- lm(LAS ~ SEC, data = result)
 # 'Liquid Assets by Securities'
-generate_stargazer_with_titles(list(OLS_model, FE_model, Averaged_model), c('OLS', 'FE', 'Averaged'))
+generate_stargazer_with_titles(list(Averaged_model), c('Averaged'))
 ```
 
 ## Plots comparison
@@ -150,19 +151,28 @@ ggplot(plot_data_long, aes(x = Date, y = Value, color = Variable)) +
 ```
 
 ```{r}
-result$date <- as.Date(result$Date)
-p <- ggplot(result, aes(x = date)) + 
+result <- read_csv('data/relative/averaged/securities_and_refinanced.csv', show_col_types = FALSE)
+
+# Convert Date column to Date type
+result$Date <- as.Date(result$Date)
+
+# Precompute SEC adjusted column
+result$SEC_adj <- result$SEC * 0.466 + 157906.300
+
+# Plot the data
+p <- ggplot(result, aes(x = Date)) + 
   geom_line(aes(y = LAS, color = "LAS", linetype = "LAS"), linewidth = 0.8) + 
   geom_line(aes(y = SEC, color = "SEC", linetype = "SEC"), linewidth = 0.8) + 
-  geom_line(aes(y = SEC * 0.865 + 0.074, color = "SEC adj.", linetype = "SEC adj."), linewidth = 0.8) + 
-  labs(title = "Oschadbank Refinanced and Securities Over Time",
+  geom_line(aes(y = SEC_adj, color = "SEC adj.", linetype = "SEC adj."), linewidth = 0.8) + 
+  labs(
        x = "Date",
        y = "Value",
        color = "Legend",
        linetype = "Legend") +
-  theme_custom() +
+  theme_custom() +  # Using a built-in theme instead of theme_custom()
   scale_color_manual(values = c("LAS" = "cyan", "SEC" = "yellow", "SEC adj." = "red")) +
   scale_linetype_manual(values = c("LAS" = "solid", "SEC" = "solid", "SEC adj." = "dashed"))
+
 name <- "~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/plots/securitiesProof.png"
 ggsave(name, plot = p, width = width, height = height, dpi = dpi)
   
