@@ -155,8 +155,14 @@ plot_column <- function(filename, chosen_column) {
 Type any R code in the chunk, for example:
 
 ```{r}
-plot_column("data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", "oschadbank")
-plot_column("data/extracted/2018_to_now_monthly/securities.csv", "ОЩАДБАНК")
+plot_column("../data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", "ОЩАДБАНК")
+plot_column("../data/extracted/2018_to_now_monthly/securities.csv", "ОЩАДБАНК")
+```
+
+```{r}
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/relative/Interbank.csv', 'IR')
+
+plot_column('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/data/relative/Policy.csv', 'IR')
 ```
 
 ```{r}
@@ -204,27 +210,27 @@ plot_median_quartiles('~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargi
 ```
 
 ```{r}
-plot_median_quartiles("data/relative/admin_expenses_to_total_assets.csv")
+plot_median_quartiles("../data/relative/admin_expenses_to_total_assets.csv")
 ```
 
 Now, click the **Run** button on the chunk toolbar to [execute](https://www.jetbrains.com/help/pycharm/r-markdown.html#run-r-code) the chunk code. The result should be placed under the chunk. Click the **Knit and Open Document** to build and preview an output.
 
 ```{r}
-plot_median_quartiles("data/relative/ovdp_to_total_assets.csv")
+plot_median_quartiles("../data/relative/ovdp_to_total_assets.csv")
 ```
 
 ```{r}
-plot_median_quartiles("data/relative/net_commision_income_to_total_assets.csv")
+plot_median_quartiles("../data/relative/net_commision_income_to_total_assets.csv")
 ```
 
 ```{r}
-plot_median_quartiles("data/relative/capital_to_total_assets.csv")
+plot_median_quartiles("../data/relative/capital_to_total_assets.csv")
 ```
 
 ```{r}
-plot_median_quartiles("data/relative/net_interest_income_to_total_assets.csv")
+plot_median_quartiles("../data/relative/net_interest_income_to_total_assets.csv")
 ```
 
 ```{r}
-plot_median_quartiles("data/relative/total_assets.csv")
+plot_median_quartiles("../data/relative/total_assets.csv")
 ```

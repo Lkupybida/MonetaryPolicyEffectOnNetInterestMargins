@@ -81,7 +81,7 @@ library(lfe)
 ## Reading data
 
 ```{r}
-data_with_OVDP <- read_csv("data/for_regressing/flattened.csv")
+data_with_OVDP <- read_csv("../data/for_regressing/flattened.csv")
 data <- data_with_OVDP %>% select(-OVDP)
 data <- na.omit(data)
 ```
@@ -211,7 +211,7 @@ generate_stargazer_with_titles(list(best_fe, model2), c('Best fixed effect model
 # Splitting into periods
 
 ```{r}
-data_with_OVDP <- read_csv("data/for_regressing/flattened.csv")
+data_with_OVDP <- read_csv("../data/for_regressing/flattened.csv")
 data <- data_with_OVDP %>% select(-OVDP)
 data <- na.omit(data)
 df_pre2014 <- data[data$Date < "2014-01-01", ]
@@ -281,8 +281,8 @@ generate_stargazer_with_titles(list(best_fe, model7, model7.5), c('Best FE model
 ## Functioning today or not
 
 ```{r}
-functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
-not_functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+functioning <- read_csv("../data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+not_functioning <- read_csv("../data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
 
 functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = functioning)
 not_functioning_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = not_functioning)
@@ -293,8 +293,8 @@ generate_stargazer_with_titles(list(functioning_model, not_functioning_model), c
 ## Top 25 (as of today)
 
 ```{r}
-top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
-rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top25 <- read_csv("../data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest <- read_csv("../data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 
 top25_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = top25)
 rest_model <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR + IR_lag1 + IR_lag2 + IR_lag3 |  Bank | 0 | Bank, data = rest)

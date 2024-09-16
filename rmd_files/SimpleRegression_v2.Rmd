@@ -80,7 +80,7 @@ library(stats)
 ## Reading data
 
 ```{r}
-data <- read_csv("data/for_regressing/interbank_nii.csv")
+data <- read_csv("../data/for_regressing/interbank_nii.csv")
 
 data_clean <- na.omit(data)
 ```

@@ -1,11 +1,11 @@
 ---
 title: "Decompositions"
 output:
+  pdf_document:
+    toc: true
   html_document:
-    toc: yes
-    toc_float: yes
-  # pdf_document:
-  #   toc: yes
+    toc: true
+    toc_float: true
 ---
 
 ```{=html}
@@ -78,7 +78,7 @@ suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(stats))
 suppressPackageStartupMessages(library(lfe))
 suppressPackageStartupMessages(library(ggplot2))
-suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/functions.R"))
+suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOnNetInterestMargins/rmd_files/functions.R"))
 ```
 
 # Reading data
@@ -91,13 +91,15 @@ top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", sho
 rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 gov <- read_csv("data/for_regressing/banks_groups/gov_or_private/gov.csv", show_col_types = FALSE)  %>% select(-OVDP)
 private <- read_csv("data/for_regressing/banks_groups/gov_or_private/private.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top10 <- read_csv("data/for_regressing/banks_groups/top10_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("data/for_regressing/banks_groups/top10_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 ```
 
 # Generic model
 
 ```{r}
 data$Bank <- as.factor(data$Bank)
-model <- felm(NII ~ AE + LEV + CASH + IR + NCI + TA + SEC | Bank | 0 | Bank, data = data)
+model <- felm(NII ~ AE + LEV + IR + NCI + TA + SEC | Bank | 0 | Bank, data = data)
 generate_stargazer_with_titles(list(model), c('Generic FE model'))
 ```
 
@@ -136,12 +138,15 @@ generate_stargazer_with_titles(list(functioning_model_pre2014, not_functioning_m
 df_after2014 <- data[data$Date >= "2014-01-01", ]
 top25_after2014 <- top25[top25$Date >= "2014-01-01", ]
 rest_after2014 <- rest[rest$Date >= "2014-01-01", ]
+
+top10_after2014 <- top10[top10$Date >= "2014-01-01", ]
+rest10_after2014 <- rest10[rest10$Date >= "2014-01-01", ]
 ```
 
 ## General model for post 2014 data
 
 ```{r}
-model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014)
+model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014)
 
 generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model', 'Post 2014'))
 ```
@@ -149,10 +154,49 @@ generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model
 ## Top 25 or not
 
 ```{r}
-top25_model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top25_after2014)
-rest_model_after2014 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest_after2014)
+top25_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top25_after2014)
+rest_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest_after2014)
 
 generate_stargazer_with_titles(list(top25_model_after2014, rest_model_after2014, model_after2014), c('Top 25', 'Rest', 'Post 2014'))
+```
+
+## Top 10 or not
+
+```{r}
+top10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top10_after2014)
+rest10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest10_after2014)
+
+generate_stargazer_with_titles(list(top10_model_after2014, rest10_model_after2014, model_after2014), c('Top 10', 'Rest', 'Post 2014'))
+```
+
+## Top 10 non gov
+
+```{r}
+top10 <- read_csv("data/for_regressing/banks_groups/top10nongov_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("data/for_regressing/banks_groups/top10nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+top10_after2014 <- top10[top10$Date >= "2014-01-01", ]
+rest10_after2014 <- rest10[rest10$Date >= "2014-01-01", ]
+
+top10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top10_after2014)
+rest10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest10_after2014)
+
+generate_stargazer_with_titles(list(top10_model_after2014, rest10_model_after2014, model_after2014), c('Top 10', 'Rest', 'Post 2014'))
+```
+
+## Top 5 non gov
+
+```{r}
+top10 <- read_csv("data/for_regressing/banks_groups/top5nongov_or_not/top5.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("data/for_regressing/banks_groups/top5nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+
+top10_after2014 <- top10[top10$Date >= "2014-01-01", ]
+rest10_after2014 <- rest10[rest10$Date >= "2014-01-01", ]
+
+top10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = top10_after2014)
+rest10_model_after2014 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = rest10_after2014)
+
+generate_stargazer_with_titles(list(top10_model_after2014, rest10_model_after2014, model_after2014), c('Top 10', 'Rest', 'Post 2014'))
 ```
 
 # 2017 to 2023 (2nd quart)
@@ -171,19 +215,23 @@ private_after2017pre2023 <- private_after2017[private_after2017$Date < "2023-07-
 ## General model
 
 ```{r}
-model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2017pre2023)
+model_after2017pre2023 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2017pre2023)
 
-generate_stargazer_with_titles(list(model, model_after2014), c('Generic FE model', 'Post 2017, Pre 2023'))
+generate_stargazer_with_titles(list(model, model_after2017pre2023), c('Generic FE model', 'Post 2017, Pre 2023'))
 ```
 
 ## Gov. owned vs private banks
 
 ```{r}
-gov_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = gov_after2017pre2023)
-private_model_after2017pre2023 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
-model_model_after2017pre2023 <-  <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
+# View(gov_after2017pre2023)
+# View(private_after2017pre2023)
+# View(private_after2017pre2023)
 
-generate_stargazer_with_titles(list(gov_model_after2017pre2023, private_model_after2017pre2023, model_after2014), c('Gov', 'Private', 'General'))
+gov_model_after2017pre2023 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = gov_after2017pre2023)
+private_model_after2017pre2023 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
+model_model_after2017pre2023 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = private_after2017pre2023)
+
+generate_stargazer_with_titles(list(gov_model_after2017pre2023, private_model_after2017pre2023, model_after2017pre2023), c('Gov', 'Private', 'General'))
 ```
 
 # Pre 2014 to Post 2014 compared
@@ -199,6 +247,6 @@ df_after2022 <- data[data$Date >= "2022-01-01", ]
 df_pre2022 <- data[data$Date < "2022-01-01", ]
 df_after2014pre2022 <- df_after2014[df_after2014$Date < "2022-01-01", ]
 model_after2022 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2022)
-model_after2014pre2022 <- felm(NII ~ AE + LEV + CASH + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014pre2022)
+model_after2014pre2022 <- felm(NII ~ AE + LEV + NCI + SEC + TA + IR |  Bank | 0 | Bank, data = df_after2014pre2022)
 generate_stargazer_with_titles(list(model_after2014pre2022, model_after2022), c('2014-2022', 'Post 2022'))
 ```

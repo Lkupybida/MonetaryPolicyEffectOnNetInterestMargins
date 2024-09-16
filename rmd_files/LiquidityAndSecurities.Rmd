@@ -85,7 +85,7 @@ suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOn
 # Extracting data
 
 ```{r}
-data <- read_csv("data/for_regressing/flattened.csv", show_col_types = FALSE)
+data <- read_csv("../data/for_regressing/flattened.csv", show_col_types = FALSE)
 data <- na.omit(data)
 all_data <- data
 result <- data %>%
@@ -151,7 +151,7 @@ ggplot(plot_data_long, aes(x = Date, y = Value, color = Variable)) +
 ```
 
 ```{r}
-result <- read_csv('data/relative/averaged/securities_and_refinanced.csv', show_col_types = FALSE)
+result <- read_csv('../data/relative/averaged/securities_and_refinanced.csv', show_col_types = FALSE)
 
 # Convert Date column to Date type
 result$Date <- as.Date(result$Date)

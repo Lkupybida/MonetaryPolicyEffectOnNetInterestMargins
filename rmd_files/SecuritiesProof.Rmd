@@ -82,9 +82,9 @@ suppressPackageStartupMessages(library(ggplot2))
 # Extracting data
 
 ```{r}
-refinanced <- read_csv("data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", show_col_types = FALSE)
+refinanced <- read_csv("../data/extracted/2018_to_now_monthly/refinanced_by_nbu.csv", show_col_types = FALSE)
 
-securities <- read.csv("data/extracted/2018_to_now_monthly/securities.csv", )
+securities <- read.csv("../data/extracted/2018_to_now_monthly/securities.csv", )
 
 securities <- securities[securities$Date >= "2019-01-01", ]
 securities <- securities[securities$Date < "2024-04-01", ]

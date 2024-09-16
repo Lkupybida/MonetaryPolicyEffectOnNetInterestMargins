@@ -80,11 +80,11 @@ library(stats)
 ## Reading data
 
 ```{r}
-median_data <- read_csv("data/for_regressing/median_dataset.csv")
+median_data <- read_csv("../data/for_regressing/median_dataset.csv")
 
 median_data <- na.omit(median_data)
 
-mean_data <- read_csv("data/for_regressing/averaged_dataset.csv")
+mean_data <- read_csv("../data/for_regressing/averaged_dataset.csv")
 
 mean_data <- na.omit(mean_data)
 ```

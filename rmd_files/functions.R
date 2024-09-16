@@ -76,7 +76,7 @@ generate_stargazer_with_titles <- function(models, titles) {
   output <- c(aligned_titles, output)
   
   # Create AIC score row
-  aic_row <- gsub("Adjusted R2", "AIC", output[grep("Adjusted R2", output)])
+  aic_row <- gsub("Adjusted R2", "AIC     ", output[grep("Adjusted R2", output)])
   aic_values <- sprintf("%.2f", aic_scores)
   aic_row <- gsub("\\d+\\.\\d+", "%s", aic_row)
   aic_row <- do.call(sprintf, c(list(aic_row), as.list(aic_values)))

@@ -99,18 +99,18 @@ if __name__ == "__main__":
     #              'data/for_regressing/banks_groups/top10_or_not/rest.csv',
     #              keep=False)
 
-    filter_banks('data/for_regressing/flattened.csv',
+    filter_banks('../data/for_regressing/flattened.csv',
                  'data/for_regressing/banks_groups/top10nongov_or_not/top10_banks_list.csv',
                  'data/for_regressing/banks_groups/top10nongov_or_not/top10.csv')
-    filter_banks('data/for_regressing/flattened.csv',
+    filter_banks('../data/for_regressing/flattened.csv',
                  'data/for_regressing/banks_groups/top10nongov_or_not/top10_banks_list.csv',
                  'data/for_regressing/banks_groups/top10nongov_or_not/rest.csv',
                  keep=False)
 
-    filter_banks('data/for_regressing/flattened.csv',
+    filter_banks('../data/for_regressing/flattened.csv',
                  'data/for_regressing/banks_groups/top5nongov_or_not/top5_banks_list.csv',
                  'data/for_regressing/banks_groups/top5nongov_or_not/top5.csv')
-    filter_banks('data/for_regressing/flattened.csv',
+    filter_banks('../data/for_regressing/flattened.csv',
                  'data/for_regressing/banks_groups/top5nongov_or_not/top5_banks_list.csv',
                  'data/for_regressing/banks_groups/top5nongov_or_not/rest.csv',
                  keep=False)

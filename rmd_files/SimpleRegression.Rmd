@@ -80,7 +80,7 @@ library(stats)
 ## Reading data
 
 ```{r}
-data <- read_csv("data/for_regressing/interbank_nii.csv")
+data <- read_csv("../data/for_regressing/interbank_nii.csv")
 
 data_clean <- na.omit(data)
 ```
@@ -251,7 +251,7 @@ And we did see something interesting. Expectedly the best model is the one that 
 # HI
 
 ```{r}
-data <- read_csv("data/relative/Interbank.csv")
+data <- read_csv("../data/relative/Interbank.csv")
 
 data_adjusted <- data %>%
   arrange(Date) %>%
@@ -260,6 +260,6 @@ data_adjusted <- data %>%
 data_with_lags <- create_lags(data_adjusted, "IR", 24)
 df <- data_with_lags[, c('Date', 'IR_lag7')]
 # Save the modified dataframe to a CSV file
-write.csv(df, "data/relative/Interbank_lag/Interbank_lag7.csv", row.names = FALSE)
+write.csv(df, "../data/relative/Interbank_lag/Interbank_lag7.csv", row.names = FALSE)
 ```
 

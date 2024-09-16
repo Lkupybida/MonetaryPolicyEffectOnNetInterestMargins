@@ -13,7 +13,7 @@ def relative_total_assets():
         split_connect_v2('total_assets.csv')
         progress_bar.update(1)
 
-        process_bank_assets('data/extracted/complete/total_assets.csv', 'data/relative/total_assets.csv')
+        process_bank_assets('../data/extracted/complete/total_assets.csv', 'data/relative/total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -37,7 +37,7 @@ def net_interest_income_to_total_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/net_interest_income.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/net_interest_income_to_total_assets.csv')
+                          '../data/relative/net_interest_income_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -56,12 +56,12 @@ def net_commision_income_to_total_assets():
 
         dates = pd.date_range(start='2009-04-01', end='2017-10-01', freq='3MS').strftime('%Y-%m-%d').tolist()
         for date in dates:
-            splitdate = extract_row_by_date('data/extracted/mixed/commision_expenses.csv', date)
+            splitdate = extract_row_by_date('../data/extracted/mixed/commision_expenses.csv', date)
             splitdate = multiply_elements_except_first(splitdate)
-            update_row_by_date('data/extracted/mixed/commision_expenses.csv', date, splitdate)
+            update_row_by_date('../data/extracted/mixed/commision_expenses.csv', date, splitdate)
             progress_bar.update(1 / len(dates))
 
-        calculate_net_income('data/extracted/mixed/commision_income.csv',
+        calculate_net_income('../data/extracted/mixed/commision_income.csv',
                              'data/extracted/mixed/commision_expenses.csv',
                              'data/extracted/mixed/net_commision_income.csv')
         progress_bar.update(1)
@@ -76,7 +76,7 @@ def net_commision_income_to_total_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/net_commision_income.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/net_commision_income_to_total_assets.csv')
+                          '../data/relative/net_commision_income_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -100,7 +100,7 @@ def ovdp_to_total_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/ovdp.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/ovdp_to_total_assets.csv')
+                          '../data/relative/ovdp_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -124,7 +124,7 @@ def admin_expenses_to_total_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/admin_expenses.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/admin_expenses_to_total_assets.csv')
+                          '../data/relative/admin_expenses_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -148,7 +148,7 @@ def capital_to_total_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/capital.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/capital_to_total_assets.csv')
+                          '../data/relative/capital_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -164,7 +164,7 @@ def InterbankIR():
     make_quarterly('data/extracted/Interbank.csv', 'data/extracted/Interbank.csv', False)
     progress_bar.update(1)
 
-    add_one_day_to_dates('data/extracted/Interbank.csv',
+    add_one_day_to_dates('../data/extracted/Interbank.csv',
                          'data/relative/Interbank.csv', 1)
     progress_bar.update(1)
 
@@ -181,7 +181,7 @@ def PolicyIR():
     make_quarterly('data/extracted/Policy.csv', 'data/extracted/Policy.csv', False)
     progress_bar.update(1)
 
-    add_one_day_to_dates('data/extracted/Policy.csv',
+    add_one_day_to_dates('../data/extracted/Policy.csv',
                          'data/relative/Policy.csv', 1)
     progress_bar.update(1)
 
@@ -200,7 +200,7 @@ def share_of_cash():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/cash.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/cash_to_total_assets.csv')
+                          '../data/relative/cash_to_total_assets.csv')
         progress_bar.update(1)
 
         progress_bar.close()
@@ -216,14 +216,14 @@ def share_of_securities():
         # extract_bank_data('Assets', securities2, 'data/extracted/mixed/securities/securities2.csv')
         progress_bar.update(1)
 
-        sum_csv_files('data/extracted/mixed/securities/securities1.csv', 'data/extracted/mixed/securities/securities2.csv', 'data/extracted/mixed/securities.csv')
+        sum_csv_files('../data/extracted/mixed/securities/securities1.csv', 'data/extracted/mixed/securities/securities2.csv', 'data/extracted/mixed/securities.csv')
         progress_bar.update(1)
 
         split_connect_v2('securities.csv')
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/securities.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/securities_to_total_assets.csv')
+                          '../data/relative/securities_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -254,7 +254,7 @@ def share_of_liquid_assets():
         progress_bar.update(1)
 
         divide_csv_values('data/extracted/complete/refinanced_by_nbu.csv', 'data/extracted/complete/total_assets.csv',
-                          'data/relative/refinanced_by_nbu_to_total_assets.csv')
+                          '../data/relative/refinanced_by_nbu_to_total_assets.csv')
         progress_bar.update(1)
 
     progress_bar.close()
@@ -290,22 +290,22 @@ def extract_data_to_relative_vars():
 
 def create_composite_dataset(mean=False):
     if mean:
-        create_median_file('data/relative/net_interest_income_to_total_assets.csv',
+        create_median_file('../data/relative/net_interest_income_to_total_assets.csv',
                            'data/relative/averaged/NII_averaged.csv', 'NII',
                            statistic = 'mean')
-        create_median_file('data/relative/admin_expenses_to_total_assets.csv',
+        create_median_file('../data/relative/admin_expenses_to_total_assets.csv',
                            'data/relative/averaged/AE_averaged.csv', 'AE',
                            statistic = 'mean')
-        create_median_file('data/relative/net_commision_income_to_total_assets.csv',
+        create_median_file('../data/relative/net_commision_income_to_total_assets.csv',
                            'data/relative/averaged/NCI_averaged.csv', 'NCI',
                            statistic = 'mean')
-        create_median_file('data/relative/capital_to_total_assets.csv',
+        create_median_file('../data/relative/capital_to_total_assets.csv',
                            'data/relative/averaged/LEV_averaged.csv', 'LEV',
                            statistic='mean')
-        create_median_file('data/relative/total_assets.csv',
+        create_median_file('../data/relative/total_assets.csv',
                            'data/relative/averaged/TA_averaged.csv', 'TA',
                            statistic='mean')
-        create_median_file('data/relative/cash_to_total_assets.csv',
+        create_median_file('../data/relative/cash_to_total_assets.csv',
                            'data/relative/averaged/CASH_averaged.csv', 'CASH',
                            statistic='mean')
 
@@ -316,19 +316,19 @@ def create_composite_dataset(mean=False):
                                 'data/relative/averaged/LEV_averaged.csv',
                                 'data/relative/averaged/TA_averaged.csv',
                                 'data/relative/median/CASH_averaged.csv',
-                                output_file='data/for_regressing/averaged_dataset.csv')
+                                output_file='../data/for_regressing/averaged_dataset.csv')
     else:
-        create_median_file('data/relative/net_interest_income_to_total_assets.csv',
+        create_median_file('../data/relative/net_interest_income_to_total_assets.csv',
                            'data/relative/median/NII_averaged.csv', 'NII')
-        create_median_file('data/relative/admin_expenses_to_total_assets.csv',
+        create_median_file('../data/relative/admin_expenses_to_total_assets.csv',
                            'data/relative/median/AE_averaged.csv', 'AE')
-        create_median_file('data/relative/net_commision_income_to_total_assets.csv',
+        create_median_file('../data/relative/net_commision_income_to_total_assets.csv',
                            'data/relative/median/NCI_averaged.csv', 'NCI')
-        create_median_file('data/relative/capital_to_total_assets.csv',
+        create_median_file('../data/relative/capital_to_total_assets.csv',
                            'data/relative/median/LEV_averaged.csv', 'LEV')
-        create_median_file('data/relative/total_assets.csv',
+        create_median_file('../data/relative/total_assets.csv',
                            'data/relative/median/TA_averaged.csv', 'TA')
-        create_median_file('data/relative/cash_to_total_assets.csv',
+        create_median_file('../data/relative/cash_to_total_assets.csv',
                            'data/relative/median/CASH_averaged.csv', 'CASH')
 
         combine_csvs_row_by_row('data/relative/median/NII_averaged.csv',
@@ -338,4 +338,4 @@ def create_composite_dataset(mean=False):
                                 'data/relative/median/LEV_averaged.csv',
                                 'data/relative/median/TA_averaged.csv',
                                 'data/relative/median/CASH_averaged.csv',
-                                output_file='data/for_regressing/median_dataset.csv')
+                                output_file='../data/for_regressing/median_dataset.csv')

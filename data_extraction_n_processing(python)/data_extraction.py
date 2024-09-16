@@ -32,8 +32,8 @@ import sys
 from contextlib import contextmanager
 
 def find_all_excel_paths():
-    excel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xlsx'), recursive=True)
-    exel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xls'), recursive=True)
+    excel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xlsx'), recursive=True)
+    exel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xls'), recursive=True)
     files = excel_files + exel_files
     excel_filenames = [os.path.splitext(os.path.basename(file))[0] for file in excel_files]
     exel_filenames = [os.path.splitext(os.path.basename(file))[0] for file in exel_files]
@@ -106,8 +106,8 @@ def get_value_from_excel(file_path, sheet_name, column_number, row_number):
     return value
 
 def what_col_bank_data_starts(column, row):
-    excel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xlsx'), recursive=True)
-    exel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xls'), recursive=True)
+    excel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xlsx'), recursive=True)
+    exel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xls'), recursive=True)
     files = excel_files + exel_files
     df = pd.DataFrame()
     dates = []
@@ -126,8 +126,8 @@ def extract_unique_banks(directory_path):
     all_banks = []
 
     # Get all Excel files in the directory
-    excel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xlsx'), recursive=True)
-    exel_files = glob(os.path.join('data/original/Aggregation', '**', '*.xls'), recursive=True)
+    excel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xlsx'), recursive=True)
+    exel_files = glob(os.path.join('../data/original/Aggregation', '**', '*.xls'), recursive=True)
     files = excel_files + exel_files
 
     # Loop through each Excel file
@@ -182,7 +182,7 @@ def extract_bank_data(sheet_name, column, output_file):
                    ['Money']]
     sheet = sheet_names[sheet_name]
     data = {}
-    files_path = 'data/original/Aggregation/files.csv'
+    files_path = '../data/original/Aggregation/files.csv'
     files_df = pd.read_csv(files_path)
 
     for file_num in range(0, len(files_df['dates'])):
@@ -431,7 +431,7 @@ def rename_bank(bank_name, csv_file_path='data/original/Aggregation/more_unique_
     return "Error"
 
 def quartalize_and_differ_wrapper(file, differ = False, expenses=False):
-    path = 'data/extracted/mixed/'
+    path = '../data/extracted/mixed/'
     split_csv_at_time(path + file, '2018-01-01', 'Date','data/extracted/2009_to_2017_quaterly/' + file, 'data/extracted/2018_to_now_monthly/' + file)
 
     if expenses:
@@ -736,7 +736,7 @@ def apply_operation(correction, *lists):
     return result
 
 def split_connect(file, differ = False, expenses=False, Finresults=False):
-    path = 'data/extracted/mixed/'
+    path = '../data/extracted/mixed/'
     split_csv_at_time(path + file, '2018-01-01', 'Date','data/extracted/2009_to_2017_quaterly/' + file, 'data/extracted/2018_to_now_monthly/' + file)
 
     if expenses:
@@ -786,7 +786,7 @@ def multiply_elements(lst, multiplier):
     return [lst[0]] + [x * multiplier for x in lst[1:]]
 
 def split_connect_v2(file, differ = False, expenses=False, Finresults=False, fix2018=False):
-    path = 'data/extracted/mixed/'
+    path = '../data/extracted/mixed/'
     split_csv_at_time(path + file, '2018-01-01', 'Date',
                       'data/extracted/2009_to_2017_quaterly/' + file,
                       'data/extracted/2018_to_now_monthly/' + file)
