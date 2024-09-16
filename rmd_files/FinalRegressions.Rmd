@@ -1,11 +1,11 @@
 ---
 title: "Decompositions"
 output:
-  pdf_document:
-    toc: true
   html_document:
     toc: true
     toc_float: true
+  pdf_document:
+    toc: true
 ---
 
 ```{=html}
@@ -84,15 +84,15 @@ suppressPackageStartupMessages(source("~/Documents/GitHub/MonetaryPolicyEffectOn
 # Reading data
 
 ```{r}
-data <- read_csv("data/for_regressing/flattened.csv")
-functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
-not_functioning <- read_csv("data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
-top25 <- read_csv("data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
-rest <- read_csv("data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
-gov <- read_csv("data/for_regressing/banks_groups/gov_or_private/gov.csv", show_col_types = FALSE)  %>% select(-OVDP)
-private <- read_csv("data/for_regressing/banks_groups/gov_or_private/private.csv", show_col_types = FALSE)  %>% select(-OVDP)
-top10 <- read_csv("data/for_regressing/banks_groups/top10_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
-rest10 <- read_csv("data/for_regressing/banks_groups/top10_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+data <- read_csv("../data/for_regressing/flattened.csv")
+functioning <- read_csv("../data/for_regressing/banks_groups/functioning_or_not/functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+not_functioning <- read_csv("../data/for_regressing/banks_groups/functioning_or_not/not_functioning.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top25 <- read_csv("../data/for_regressing/banks_groups/top25_or_not/top25.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest <- read_csv("../data/for_regressing/banks_groups/top25_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+gov <- read_csv("../data/for_regressing/banks_groups/gov_or_private/gov.csv", show_col_types = FALSE)  %>% select(-OVDP)
+private <- read_csv("../data/for_regressing/banks_groups/gov_or_private/private.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top10 <- read_csv("../data/for_regressing/banks_groups/top10_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("../data/for_regressing/banks_groups/top10_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 ```
 
 # Generic model
@@ -172,8 +172,8 @@ generate_stargazer_with_titles(list(top10_model_after2014, rest10_model_after201
 ## Top 10 non gov
 
 ```{r}
-top10 <- read_csv("data/for_regressing/banks_groups/top10nongov_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
-rest10 <- read_csv("data/for_regressing/banks_groups/top10nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top10 <- read_csv("../data/for_regressing/banks_groups/top10nongov_or_not/top10.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("../data/for_regressing/banks_groups/top10nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 
 top10_after2014 <- top10[top10$Date >= "2014-01-01", ]
 rest10_after2014 <- rest10[rest10$Date >= "2014-01-01", ]
@@ -187,8 +187,8 @@ generate_stargazer_with_titles(list(top10_model_after2014, rest10_model_after201
 ## Top 5 non gov
 
 ```{r}
-top10 <- read_csv("data/for_regressing/banks_groups/top5nongov_or_not/top5.csv", show_col_types = FALSE)  %>% select(-OVDP)
-rest10 <- read_csv("data/for_regressing/banks_groups/top5nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
+top10 <- read_csv("../data/for_regressing/banks_groups/top5nongov_or_not/top5.csv", show_col_types = FALSE)  %>% select(-OVDP)
+rest10 <- read_csv("../data/for_regressing/banks_groups/top5nongov_or_not/rest.csv", show_col_types = FALSE)  %>% select(-OVDP)
 
 top10_after2014 <- top10[top10$Date >= "2014-01-01", ]
 rest10_after2014 <- rest10[rest10$Date >= "2014-01-01", ]
